@@ -229,12 +229,34 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 if (noteElement) {
                     const targetNoteId = noteElement.getAttribute('data-note-id');
                     if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
+                        // Optimistic Update
+                        const tempId = Math.random().toString();
+                        const newConnection = {
+                            id: tempId,
+                            board_id: boardId,
+                            from_note_id: activeConnection.startNoteId,
+                            to_note_id: targetNoteId,
+                            created_at: new Date().toISOString()
+                        };
+                        setConnections(prev => [...prev, newConnection as any]);
+
                         // Finish Connection (Click-Click method)
-                        await (supabase.from('connections') as any).insert({
+                        const { data, error } = await (supabase.from('connections') as any).insert({
                             board_id: boardId,
                             from_note_id: activeConnection.startNoteId,
                             to_note_id: targetNoteId
-                        });
+                        }).select().single();
+
+                        if (error) {
+                            console.error('Error creating connection:', error);
+                            // Revert optimistic update
+                            setConnections(prev => prev.filter(c => c.id !== tempId));
+                            alert('Failed to save connection: ' + error.message);
+                        } else {
+                            // Replace temp ID with real ID (or just let Realtime handle it - preventing dupes)
+                            setConnections(prev => prev.map(c => c.id === tempId ? (data as any) : c));
+                        }
+
                         setActiveConnection(null);
                         return;
                     }
@@ -334,11 +356,31 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             if (noteElement) {
                 const targetNoteId = noteElement.getAttribute('data-note-id');
                 if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
-                    await (supabase.from('connections') as any).insert({
+
+                    // Optimistic Update
+                    const tempId = Math.random().toString();
+                    const newConnection = {
+                        id: tempId,
+                        board_id: boardId,
+                        from_note_id: activeConnection.startNoteId,
+                        to_note_id: targetNoteId,
+                        created_at: new Date().toISOString()
+                    };
+                    setConnections(prev => [...prev, newConnection as any]);
+
+                    const { data, error } = await (supabase.from('connections') as any).insert({
                         board_id: boardId,
                         from_note_id: activeConnection.startNoteId,
                         to_note_id: targetNoteId
-                    });
+                    }).select().single();
+
+                    if (error) {
+                        console.error('Error creating connection:', error);
+                        setConnections(prev => prev.filter(c => c.id !== tempId));
+                    } else {
+                        setConnections(prev => prev.map(c => c.id === tempId ? (data as any) : c));
+                    }
+
                     setActiveConnection(null);
                     return;
                 }
