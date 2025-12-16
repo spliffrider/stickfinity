@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import StickyNote from "./StickyNote";
 import { Plus } from "lucide-react";
 import { Cursor } from "./Cursor";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
 import { ConnectionLines } from "./ConnectionLines";
 
