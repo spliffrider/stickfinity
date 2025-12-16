@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import dynamic from "next/dynamic";
 import { Database } from "@/lib/database.types";
-import { Plus, Layout, LogOut, Search } from "lucide-react";
+import { Plus, Layout, LogOut, Search, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
+import ShareBoardDialog from "@/components/ShareBoardDialog"; // Import Dialog
 
 const SpaceBackground = dynamic(() => import("@/components/SpaceBackground"), { ssr: false });
 
@@ -20,6 +21,10 @@ export default function Dashboard() {
     const [newBoardName, setNewBoardName] = useState("");
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Share State
+    const [shareBoard, setShareBoard] = useState<Board | null>(null);
+
     const router = useRouter();
 
     useEffect(() => {
@@ -166,9 +171,19 @@ export default function Dashboard() {
                                 onClick={() => router.push(`/board/${board.id}`)}
                                 className="glass-panel p-6 rounded-2xl hover:border-purple-500/50 hover:shadow-purple-500/10 cursor-pointer overflow-hidden group relative transition-all duration-300 hover:scale-[1.02]"
                             >
-                                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShareBoard(board);
+                                        }}
+                                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md text-white transition-colors"
+                                        title="Share Board"
+                                    >
+                                        <Share2 size={16} />
+                                    </button>
                                     <div className="p-2 bg-white/10 rounded-full backdrop-blur-md">
-                                        <div className={`w-2 h-2 rounded-full ${board.is_public ? 'bg-green-400 box-shadow-green' : 'bg-yellow-400 box-shadow-yellow'}`} />
+                                        <div className={`w-4 h-4 rounded-full ${board.is_public ? 'bg-green-400 box-shadow-green' : 'bg-yellow-400 box-shadow-yellow'}`} />
                                     </div>
                                 </div>
 
@@ -203,6 +218,19 @@ export default function Dashboard() {
                     </div>
                 )}
             </main>
+
+            {/* Share Dialog */}
+            {shareBoard && (
+                <ShareBoardDialog
+                    board={shareBoard}
+                    isOpen={!!shareBoard}
+                    onClose={() => setShareBoard(null)}
+                    onUpdate={(updates) => {
+                        setBoards(prev => prev.map(b => b.id === shareBoard.id ? { ...b, ...updates } : b));
+                        setShareBoard(prev => prev ? ({ ...prev, ...updates }) : null);
+                    }}
+                />
+            )}
         </div>
     );
 }
