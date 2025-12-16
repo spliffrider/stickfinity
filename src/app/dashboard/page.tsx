@@ -69,10 +69,10 @@ export default function Dashboard() {
                 setError(insertError.message || "Error creating board");
             }
         } else if (data) {
-            setBoards([data, ...boards]);
+            setBoards([data as any, ...boards]);
             setNewBoardName("");
             setIsCreating(false);
-            router.push(`/board/${data.id}`);
+            router.push(`/board/${(data as any).id}`);
         }
     };
 

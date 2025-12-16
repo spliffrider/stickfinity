@@ -96,6 +96,29 @@ export interface Database {
                     updated_at?: string
                 }
             }
+            connections: {
+                Row: {
+                    id: string
+                    board_id: string
+                    from_note_id: string
+                    to_note_id: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    board_id: string
+                    from_note_id: string
+                    to_note_id: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    board_id?: string
+                    from_note_id?: string
+                    to_note_id?: string
+                    created_at?: string
+                }
+            }
         }
     }
 }
