@@ -363,18 +363,24 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             canvasY = 0;
         }
 
-        const { error } = await (supabase.from('notes') as any).insert({
+        const { data, error } = await (supabase.from('notes') as any).insert({
             board_id: boardId,
             author_id: userId,
             content: { text: "" },
             x: canvasX - 100, // Center note
             y: canvasY - 100,
             color: 'yellow' // Default
-        });
+        }).select().single();
 
         if (error) {
             console.error('Error creating note:', error);
             alert(`Failed to create note: ${error.message}`);
+        } else if (data) {
+            // Optimistically add to state (Realtime might duplicate this, but React key handling usually handles it or we can de-dupe)
+            setNotes(prev => {
+                if (prev.find(n => n.id === data.id)) return prev;
+                return [...prev, data as Note];
+            });
         }
     };
 
