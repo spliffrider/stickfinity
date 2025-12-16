@@ -229,13 +229,19 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 if (noteElement) {
                     const targetNoteId = noteElement.getAttribute('data-note-id');
                     if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
+                        const fromId = activeConnection.startNoteId;
+                        const toId = targetNoteId;
+
+                        // Clear active connection immediately to prevent race with MouseUp
+                        setActiveConnection(null);
+
                         // Optimistic Update
                         const tempId = Math.random().toString();
                         const newConnection = {
                             id: tempId,
                             board_id: boardId,
-                            from_note_id: activeConnection.startNoteId,
-                            to_note_id: targetNoteId,
+                            from_note_id: fromId,
+                            to_note_id: toId,
                             created_at: new Date().toISOString()
                         };
                         setConnections(prev => [...prev, newConnection as any]);
@@ -243,8 +249,8 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         // Finish Connection (Click-Click method)
                         const { data, error } = await (supabase.from('connections') as any).insert({
                             board_id: boardId,
-                            from_note_id: activeConnection.startNoteId,
-                            to_note_id: targetNoteId
+                            from_note_id: fromId,
+                            to_note_id: toId
                         }).select().single();
 
                         if (error) {
@@ -253,11 +259,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                             setConnections(prev => prev.filter(c => c.id !== tempId));
                             alert('Failed to save connection: ' + error.message);
                         } else {
-                            // Replace temp ID with real ID (or just let Realtime handle it - preventing dupes)
+                            // Replace temp ID with real ID
                             setConnections(prev => prev.map(c => c.id === tempId ? (data as any) : c));
                         }
 
-                        setActiveConnection(null);
                         return;
                     }
                 }
