@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Database } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import StickyNote from "./StickyNote";
-import { Plus } from "lucide-react";
+import { Plus, Minus, Link as LinkIcon, MousePointer2 } from "lucide-react";
 import { Cursor } from "./Cursor";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
@@ -29,6 +29,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
     const [notes, setNotes] = useState<Note[]>(initialNotes);
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
     const [isPanning, setIsPanning] = useState(false);
+    const [isConnectionMode, setIsConnectionMode] = useState(false);
     const [dragInfo, setDragInfo] = useState<{ noteId: string; startX: number; startY: number; initialNoteX: number; initialNoteY: number } | null>(null);
     const [cursors, setCursors] = useState<Record<string, CursorData>>({});
     const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1, width: 1000, height: 1000 });
@@ -217,8 +218,8 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             return;
         }
 
-        // Check for Connection Mode (Shift Click)
-        if (e.shiftKey) {
+        // Check for Connection Mode (Shift Click or Toggle)
+        if (e.shiftKey || isConnectionMode) {
             const target = e.target as HTMLElement;
             const noteElement = target.closest('[data-note-id]');
             if (noteElement) {
@@ -463,13 +464,59 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             />
 
             {/* HUD / Controls */}
-            <div className="absolute bottom-8 right-8 flex gap-4 pointer-events-none" style={{ right: '200px' }}> {/* Adjusted right position to not overlap minimap */}
-                <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-full pointer-events-auto">
-                    Zoom: {Math.round(transform.scale * 100)}%
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 pointer-events-none z-50">
+
+                {/* Tools */}
+                <div className="glass-panel p-2 rounded-full flex gap-2 pointer-events-auto shadow-2xl bg-black/50 backdrop-blur-xl border border-white/10">
+                    <button
+                        className={`p-3 rounded-full transition-all ${!isConnectionMode ? 'bg-indigo-600 text-white shadow-glow' : 'hover:bg-white/10 text-gray-400'}`}
+                        onClick={() => setIsConnectionMode(false)}
+                        title="Move / Select"
+                    >
+                        <MousePointer2 size={20} />
+                    </button>
+                    <button
+                        className={`p-3 rounded-full transition-all ${isConnectionMode ? 'bg-cyan-500 text-white shadow-glow' : 'hover:bg-white/10 text-gray-400'}`}
+                        onClick={() => setIsConnectionMode(true)}
+                        title="Connect Notes"
+                    >
+                        <LinkIcon size={20} />
+                    </button>
                 </div>
+
+                {/* divider */}
+                <div className="w-px h-8 bg-white/10"></div>
+
+                {/* Zoom Controls */}
+                <div className="glass-panel p-2 rounded-full flex items-center gap-2 pointer-events-auto bg-black/50 backdrop-blur-xl border border-white/10">
+                    <button
+                        className="p-3 hover:bg-white/10 rounded-full text-white transition-colors"
+                        onClick={() => setTransform(prev => ({ ...prev, scale: Math.max(0.1, prev.scale - 0.1) }))}
+                    >
+                        <Minus size={20} />
+                    </button>
+                    <span className="w-16 text-center font-mono text-sm text-gray-300 select-none cursor-pointer"
+                        onClick={() => setTransform(prev => ({ ...prev, scale: 1 }))}
+                        title="Reset Zoom"
+                    >
+                        {Math.round(transform.scale * 100)}%
+                    </span>
+                    <button
+                        className="p-3 hover:bg-white/10 rounded-full text-white transition-colors"
+                        onClick={() => setTransform(prev => ({ ...prev, scale: Math.min(5, prev.scale + 0.1) }))}
+                    >
+                        <Plus size={20} />
+                    </button>
+                </div>
+
+                {/* divider */}
+                <div className="w-px h-8 bg-white/10"></div>
+
+                {/* Create Note */}
                 <button
-                    className="bg-purple-600 hover:bg-purple-700 text-white rounded-full p-3 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
                     onClick={() => handleCreateNote(window.innerWidth / 2, window.innerHeight / 2)}
+                    title="Add Sticky Note"
                 >
                     <Plus size={24} />
                 </button>
