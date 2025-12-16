@@ -105,8 +105,19 @@ export default function StickyNote({ note, onUpdate, onDelete, scale }: StickyNo
                     onMouseDown={(e) => e.stopPropagation()} // Prevent drag when interacting with text
                 />
             ) : (
-                <div className="whitespace-pre-wrap text-gray-800 select-none pointer-events-none">
-                    {content.text || "Double click to edit..."}
+                <div className="w-full h-full text-gray-800 select-none pointer-events-none">
+                    {(content as any).type === 'image' && (content as any).url ? (
+                        <img
+                            src={(content as any).url}
+                            alt="Note attachment"
+                            className="w-full h-full object-cover rounded-md pointer-events-none"
+                            draggable={false}
+                        />
+                    ) : (
+                        <div className="whitespace-pre-wrap">
+                            {content.text || "Double click to edit..."}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
