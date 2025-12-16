@@ -104,6 +104,33 @@ export default function AuthPage() {
                         >
                             {loading ? "Ignition..." : isSignUp ? "Launch Mission" : "Engage Thrusters"}
                         </button>
+
+                        <div className="relative my-6">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-gray-600/30"></span>
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="glass-panel px-2 text-gray-400">Or continue with</span>
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                setLoading(true);
+                                const { error } = await supabase.auth.signInAnonymously();
+                                if (error) {
+                                    setMessage({ text: error.message, type: 'error' });
+                                    setLoading(false);
+                                } else {
+                                    router.push("/dashboard");
+                                }
+                            }}
+                            disabled={loading}
+                            className="w-full glass-button bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 border-indigo-500/30"
+                        >
+                            Visiting Alien (Guest Mode)
+                        </button>
                     </form>
 
                     <div className="mt-8 text-center">
