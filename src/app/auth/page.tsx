@@ -91,6 +91,34 @@ export default function AuthPage() {
                             />
                         </div>
 
+                        {/* Forgot Password Link */}
+                        {!isSignUp && (
+                            <div className="text-right">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const emailToReset = prompt("Enter your email address to reset password:");
+                                        if (emailToReset) {
+                                            setLoading(true);
+                                            supabase.auth.resetPasswordForEmail(emailToReset, {
+                                                redirectTo: `${window.location.origin}/update-password`,
+                                            }).then(({ error }) => {
+                                                setLoading(false);
+                                                if (error) {
+                                                    setMessage({ text: error.message, type: 'error' });
+                                                } else {
+                                                    setMessage({ text: "Password reset link sent!", type: 'success' });
+                                                }
+                                            });
+                                        }
+                                    }}
+                                    className="text-xs text-gray-400 hover:text-white transition-colors"
+                                >
+                                    Lost your security code?
+                                </button>
+                            </div>
+                        )}
+
                         {message && (
                             <div className={`p-3 rounded-lg text-sm text-center ${message.type === 'error' ? 'bg-red-500/20 text-red-200 border border-red-500/30' : 'bg-green-500/20 text-green-200 border border-green-500/30'}`}>
                                 {message.text}

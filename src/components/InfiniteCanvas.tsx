@@ -372,7 +372,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             color: 'yellow' // Default
         });
 
-        if (error) console.error('Error creating note:', error);
+        if (error) {
+            console.error('Error creating note:', error);
+            alert(`Failed to create note: ${error.message}`);
+        }
     };
 
     const handleDoubleClick = (e: React.MouseEvent) => {
