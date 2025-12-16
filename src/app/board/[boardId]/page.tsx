@@ -8,13 +8,23 @@ import SpaceBackground from "@/components/SpaceBackground";
 import InfiniteCanvas from "@/components/InfiniteCanvas";
 import { Database } from "@/lib/database.types";
 
+import { Share2, ArrowLeft } from "lucide-react";
+import ShareBoardDialog from "@/components/ShareBoardDialog";
+import { Database } from "@/lib/database.types";
+
+type Board = Database["public"]["Tables"]["boards"]["Row"];
+
 export default function BoardPage() {
     const params = useParams();
     const router = useRouter();
     const boardId = params.boardId as string;
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
+    const [board, setBoard] = useState<Board | null>(null);
     const [notes, setNotes] = useState<Database['public']['Tables']['notes']['Row'][]>([]);
+
+    // UI State
+    const [isShareOpen, setIsShareOpen] = useState(false);
 
     useEffect(() => {
         const fetchBoardData = async () => {
@@ -26,18 +36,17 @@ export default function BoardPage() {
             setUser(data.user);
 
             // Fetch Board details to verify access
-            const { data: board, error: boardError } = await supabase
+            const { data: boardData, error: boardError } = await supabase
                 .from("boards")
                 .select("*")
                 .eq("id", boardId)
                 .single();
 
-            if (boardError || !board) {
+            if (boardError || !boardData) {
                 console.error("Board not found or access denied");
-                // router.push("/dashboard"); 
-                // For debugging, we might want to stay here or show error
                 return;
             }
+            setBoard(boardData);
 
             // Fetch Notes
             const { data: notesData, error: notesError } = await supabase
@@ -71,15 +80,41 @@ export default function BoardPage() {
             <SpaceBackground />
             <InfiniteCanvas initialNotes={notes} boardId={boardId} userId={user.id} />
 
-            {/* Simple Back Button */}
-            <div className="fixed top-4 left-4 z-50">
+            {/* Header Bar */}
+            <div className="fixed top-0 left-0 w-full p-4 z-50 pointer-events-none flex justify-between items-start">
+
+                {/* Back Button */}
                 <button
                     onClick={() => router.push('/dashboard')}
-                    className="text-white/50 hover:text-white transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-white/10 backdrop-blur-md rounded-full text-white/70 hover:text-white transition-all pointer-events-auto border border-white/5"
                 >
-                    ← Back to Dashboard
+                    <ArrowLeft size={18} />
+                    <span className="text-sm font-medium">Dashboard</span>
                 </button>
+
+                {/* Right Actions */}
+                <div className="flex gap-3 pointer-events-auto">
+                    {board && (
+                        <button
+                            onClick={() => setIsShareOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600/90 hover:bg-indigo-600 backdrop-blur-md rounded-full text-white transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40"
+                        >
+                            <Share2 size={16} />
+                            <span className="text-sm font-semibold">Share</span>
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {/* Dialogs */}
+            {board && (
+                <ShareBoardDialog
+                    board={board}
+                    isOpen={isShareOpen}
+                    onClose={() => setIsShareOpen(false)}
+                    onUpdate={(updates) => setBoard(prev => prev ? ({ ...prev, ...updates }) : null)}
+                />
+            )}
         </div>
     );
 }
