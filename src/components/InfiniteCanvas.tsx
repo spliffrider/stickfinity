@@ -1,55 +1,15 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Database } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import StickyNote from "./StickyNote";
 import { Plus, Minus, Link as LinkIcon, MousePointer2, Share2 } from "lucide-react";
-// ... imports
-
-interface InfiniteCanvasProps {
-    initialNotes: Note[];
-    boardId: string;
-    userId: string;
-    onShare?: () => void; // Optional for now
-}
-// ...
-export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare }: InfiniteCanvasProps) {
-    // ... logic ...
-
-    return (
-        // ... previous JSX ...
-
-        {/* Create Note */ }
-        < button
-                    className = "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
-    onClick = {() => handleCreateNote(window.innerWidth / 2, window.innerHeight / 2)
-}
-title = "Add Sticky Note"
-    >
-    <Plus size={24} />
-                </button >
-
-    {/* Share Button (New Position) */ }
-{
-    onShare && (
-        <button
-            className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
-            onClick={onShare}
-            title="Share Board"
-        >
-            <Share2 size={24} />
-        </button>
-    )
-}
-            </div >
-        </div >
-    );
-}
 import { Cursor } from "./Cursor";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
 import { ConnectionLines } from "./ConnectionLines";
+import clsx from "clsx";
 
 type Note = Database["public"]["Tables"]["notes"]["Row"];
 
@@ -57,6 +17,7 @@ interface InfiniteCanvasProps {
     initialNotes: Note[];
     boardId: string;
     userId: string;
+    onShare?: () => void;
 }
 
 interface CursorData {
@@ -66,7 +27,7 @@ interface CursorData {
     userId: string;
 }
 
-export default function InfiniteCanvas({ initialNotes, boardId, userId }: InfiniteCanvasProps) {
+export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare }: InfiniteCanvasProps) {
     const [notes, setNotes] = useState<Note[]>(initialNotes);
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
     const [isPanning, setIsPanning] = useState(false);
@@ -345,8 +306,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             const canvasX = (e.clientX - transform.x) / transform.scale;
             const canvasY = (e.clientY - transform.y) / transform.scale;
             setActiveConnection(prev => prev ? ({ ...prev, currentX: canvasX, currentY: canvasY }) : null);
-            // Allow interactions underneath if strictly moving mouse? 
-            // Actually we are in a modal state of "wiring" basically, so claiming mouse is fine.
         }
 
         if (isPanning) {
@@ -391,7 +350,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             if (!isConnectionMode) {
                 setActiveConnection(null);
             }
-            // If isConnectionMode=true, do NOTHING -> keep activeConnection alive waiting for next click
         }
 
         if (dragInfo) {
@@ -415,13 +373,9 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
         let canvasX = (x - tX) / tScale;
         let canvasY = (y - tY) / tScale;
 
-        // Nan Check (Should be impossible now, but good to keep)
-        if (isNaN(canvasX)) {
-            canvasX = 0;
-        }
-        if (isNaN(canvasY)) {
-            canvasY = 0;
-        }
+        // Nan Check
+        if (isNaN(canvasX)) canvasX = 0;
+        if (isNaN(canvasY)) canvasY = 0;
 
         const { data, error } = await (supabase.from('notes') as any).insert({
             board_id: boardId,
@@ -436,7 +390,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
             console.error('Error creating note:', error);
             alert(`Failed to create note: ${error.message}`);
         } else if (data) {
-            // Optimistically add to state (Realtime might duplicate this, but React key handling usually handles it or we can de-dupe)
             setNotes(prev => {
                 if (prev.find(n => n.id === data.id)) return prev;
                 return [...prev, data as Note];
@@ -452,15 +405,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
     };
 
     const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
-        // Optimistic Update
         setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
-
         const { error } = await (supabase.from('notes') as any).update(updates).eq('id', id);
         if (error) {
             console.error('Error updating note:', error);
-            // Revert on error (optional but good practice, though complex to implement perfectly without prev state history)
-            // For now, just alert
-            // alert(`Failed to save note: ${error.message}`); 
         }
     };
 
@@ -500,7 +448,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                         x={cursor.x}
                         y={cursor.y}
                         color={cursor.color}
-                        name={undefined} // We could pass email if we had it
+                        name={undefined}
                     />
                 ))}
 
@@ -580,6 +528,17 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                 >
                     <Plus size={24} />
                 </button>
+
+                {/* Share Button (New Position) */}
+                {onShare && (
+                    <button
+                        className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
+                        onClick={onShare}
+                        title="Share Board"
+                    >
+                        <Share2 size={24} />
+                    </button>
+                )}
             </div>
         </div>
     );
