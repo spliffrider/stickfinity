@@ -12,7 +12,7 @@ interface MinimapProps {
 export const Minimap: React.FC<MinimapProps> = ({ notes, viewport, onNavigate }) => {
     // 1. Calculate Bounds
     const bounds = useMemo(() => {
-        if (notes.length === 0) return { minX: -500, maxX: 500, minY: -500, maxY: 500 };
+        if (notes.length === 0) return { minX: -500, maxX: 500, minY: -500, maxY: 500, width: 1000, height: 1000 };
 
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         notes.forEach(note => {
