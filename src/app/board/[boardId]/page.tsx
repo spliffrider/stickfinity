@@ -10,7 +10,6 @@ import { Database } from "@/lib/database.types";
 
 import { Share2, ArrowLeft } from "lucide-react";
 import ShareBoardDialog from "@/components/ShareBoardDialog";
-import { Database } from "@/lib/database.types";
 
 type Board = Database["public"]["Tables"]["boards"]["Row"];
 
