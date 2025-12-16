@@ -392,8 +392,16 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
     };
 
     const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
+        // Optimistic Update
+        setNotes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
+
         const { error } = await (supabase.from('notes') as any).update(updates).eq('id', id);
-        if (error) console.error('Error updating note:', error);
+        if (error) {
+            console.error('Error updating note:', error);
+            // Revert on error (optional but good practice, though complex to implement perfectly without prev state history)
+            // For now, just alert
+            // alert(`Failed to save note: ${error.message}`); 
+        }
     };
 
     const handleDeleteNote = async (id: string) => {

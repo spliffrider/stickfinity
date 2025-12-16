@@ -46,7 +46,13 @@ export default function StickyNote({ note, onUpdate, onDelete, scale }: StickyNo
             const originalText = (note.content as { text?: string })?.text || "";
 
             if (currentText !== originalText) {
-                onUpdate(note.id, { content: { text: currentText } });
+                // Merge content to avoid losing other properties (like color/type if stored there)
+                onUpdate(note.id, {
+                    content: {
+                        ...((note.content as object) || {}),
+                        text: currentText
+                    }
+                });
             }
         }, 500); // 500ms debounce
 
