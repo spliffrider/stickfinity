@@ -14,6 +14,7 @@ interface StickyNoteProps {
     onUpdate: (id: string, updates: Partial<Note>) => void;
     onDelete: (id: string) => void;
     scale: number;
+    isConnecting?: boolean;
 }
 
 const COLORS = {
@@ -25,7 +26,7 @@ const COLORS = {
     purple: "bg-purple-200/80 border-purple-300",
 } as const;
 
-export default function StickyNote({ note, onUpdate, onDelete, scale }: StickyNoteProps) {
+export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecting }: StickyNoteProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState(note.content as { text?: string } || { text: "" });
@@ -69,7 +70,8 @@ export default function StickyNote({ note, onUpdate, onDelete, scale }: StickyNo
         <div
             ref={noteRef}
             className={clsx(
-                "absolute p-4 rounded-lg shadow-lg backdrop-blur-sm border transition-shadow cursor-grab active:cursor-grabbing",
+                "absolute p-4 rounded-lg shadow-lg backdrop-blur-sm border transition-shadow",
+                isConnecting ? "cursor-crosshair hover:ring-2 hover:ring-cyan-400 hover:shadow-cyan-400/50" : "cursor-grab active:cursor-grabbing",
                 colorClass,
                 isEditing && "ring-2 ring-white cursor-text",
                 isDragging && "opacity-80 scale-105 z-50 shadow-2xl"

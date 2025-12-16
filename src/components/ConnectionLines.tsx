@@ -20,7 +20,8 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
     };
 
     return (
-        <svg className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible z-0">
+        // Use 1x1 pixel with overflow visible to avoid "w-full" resolving to 0 in a collapsed container
+        <svg className="absolute top-0 left-0 w-1 h-1 pointer-events-none overflow-visible z-0">
             <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
                     <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />

@@ -210,18 +210,39 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
         }
     };
 
-    const handleMouseDown = (e: React.MouseEvent) => {
+    const handleMouseDown = async (e: React.MouseEvent) => {
         // Check modifiers for Zoom/Pan vs Drag
         if (e.ctrlKey || e.metaKey) {
-            // Let handleWheel / others handle zoom, or panning
             setIsPanning(true);
             return;
         }
 
-        // Check for Connection Mode (Shift Click or Toggle)
+        // Connection Mode Logic
         if (e.shiftKey || isConnectionMode) {
             const target = e.target as HTMLElement;
             const noteElement = target.closest('[data-note-id]');
+
+            // Case 1: We are already wiring and clicked something
+            if (activeConnection) {
+                if (noteElement) {
+                    const targetNoteId = noteElement.getAttribute('data-note-id');
+                    if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
+                        // Finish Connection (Click-Click method)
+                        await (supabase.from('connections') as any).insert({
+                            board_id: boardId,
+                            from_note_id: activeConnection.startNoteId,
+                            to_note_id: targetNoteId
+                        });
+                        setActiveConnection(null);
+                        return;
+                    }
+                }
+                // Clicked empty space or same note? Cancel wiring
+                setActiveConnection(null);
+                return;
+            }
+
+            // Case 2: Start new wiring
             if (noteElement) {
                 const noteId = noteElement.getAttribute('data-note-id');
                 const note = notes.find(n => n.id === noteId);
@@ -229,7 +250,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                     const canvasX = (e.clientX - transform.x) / transform.scale;
                     const canvasY = (e.clientY - transform.y) / transform.scale;
 
-                    // Start line from center of the note
                     setActiveConnection({
                         startNoteId: noteId,
                         startX: note.x + 100,
@@ -237,7 +257,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                         currentX: canvasX,
                         currentY: canvasY
                     });
-                    e.preventDefault(); // Stop text selection
+                    e.preventDefault();
                     return;
                 }
             }
@@ -248,7 +268,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
         const noteElement = target.closest('[data-note-id]');
 
         if (noteElement) {
-            // Start dragging note
             const noteId = noteElement.getAttribute('data-note-id');
             const note = notes.find(n => n.id === noteId);
             if (note && noteId) {
@@ -261,21 +280,17 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                 });
             }
         } else {
-            // Start panning canvas
             setIsPanning(true);
         }
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        // Broadcast Cursor
         const now = Date.now();
         if (now - lastCursorUpdate.current > 30) {
             lastCursorUpdate.current = now;
             const canvasX = (e.clientX - transform.x) / transform.scale;
             const canvasY = (e.clientY - transform.y) / transform.scale;
-
             if (channelRef.current) {
-                // We optimize by not awaiting this
                 channelRef.current.track({
                     userId,
                     x: canvasX,
@@ -286,11 +301,11 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
         }
 
         if (activeConnection) {
-            // Update temporary connection line
             const canvasX = (e.clientX - transform.x) / transform.scale;
             const canvasY = (e.clientY - transform.y) / transform.scale;
             setActiveConnection(prev => prev ? ({ ...prev, currentX: canvasX, currentY: canvasY }) : null);
-            return;
+            // Allow interactions underneath if strictly moving mouse? 
+            // Actually we are in a modal state of "wiring" basically, so claiming mouse is fine.
         }
 
         if (isPanning) {
@@ -300,14 +315,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                 y: prev.y + e.movementY
             }));
         } else if (dragInfo) {
-            // Move Note
             const dx = (e.clientX - dragInfo.startX) / transform.scale;
             const dy = (e.clientY - dragInfo.startY) / transform.scale;
-
             const newX = dragInfo.initialNoteX + dx;
             const newY = dragInfo.initialNoteY + dy;
-
-            // Optimistic update
             setNotes(prev => prev.map(n => n.id === dragInfo.noteId ? { ...n, x: newX, y: newY } : n));
         }
     };
@@ -316,29 +327,36 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
         setIsPanning(false);
 
         if (activeConnection) {
-            // Finish Connection
             const target = e.target as HTMLElement;
             const noteElement = target.closest('[data-note-id]');
 
+            // If released over a DIFFERENT note, we finish (Drag-Drop style)
             if (noteElement) {
                 const targetNoteId = noteElement.getAttribute('data-note-id');
-                // Create connection if different notes
                 if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
                     await (supabase.from('connections') as any).insert({
                         board_id: boardId,
                         from_note_id: activeConnection.startNoteId,
                         to_note_id: targetNoteId
                     });
+                    setActiveConnection(null);
+                    return;
                 }
             }
-            setActiveConnection(null);
+
+            // If released over SAME note or EMPTY space:
+            // If we are in explicit Connection Mode (toggle on), we KEEP wiring (for Click-Click style).
+            // If we are just holding Shift, we probably meant to drag-drop so cancel if missed.
+            if (!isConnectionMode) {
+                setActiveConnection(null);
+            }
+            // If isConnectionMode=true, do NOTHING -> keep activeConnection alive waiting for next click
         }
 
         if (dragInfo) {
-            // Save final position to DB
             const note = notes.find(n => n.id === dragInfo.noteId);
             if (note) {
-                const { error } = await (supabase.from('notes') as any).update({ x: note.x, y: note.y }).eq('id', note.id);
+                await (supabase.from('notes') as any).update({ x: note.x, y: note.y }).eq('id', note.id);
             }
             setDragInfo(null);
         }
@@ -412,7 +430,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
 
     return (
         <div
-            className="relative w-full h-full overflow-hidden cursor-move bg-transparent"
+            className={`relative w-full h-full overflow-hidden bg-transparent ${isConnectionMode ? 'cursor-crosshair' : 'cursor-move'}`}
             onWheel={handleWheel}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -452,6 +470,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId }: Infini
                         onUpdate={handleUpdateNote}
                         onDelete={handleDeleteNote}
                         scale={transform.scale}
+                        isConnecting={isConnectionMode || !!activeConnection}
                     />
                 ))}
             </div>
