@@ -83,15 +83,18 @@ export default function StickyNote({ note, onUpdate, onDelete, scale }: StickyNo
             // Start drag handled by parent to coordinate mouse movement to canvas scale
             data-note-id={note.id}
         >
-            <div className="flex justify-end mb-2 opacity-0 hover:opacity-100 transition-opacity">
+            <div className="flex justify-end mb-2">
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        onDelete(note.id);
+                        if (confirm("Delete this note?")) {
+                            onDelete(note.id);
+                        }
                     }}
-                    className="p-1 hover:bg-black/10 rounded-full"
+                    className="p-1.5 bg-black/20 hover:bg-red-500/80 rounded-full text-white transition-colors"
+                    title="Delete Note"
                 >
-                    <X size={14} className="text-gray-700" />
+                    <X size={14} className="text-white" />
                 </button>
             </div>
 

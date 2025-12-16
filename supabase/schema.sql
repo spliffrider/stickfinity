@@ -107,19 +107,24 @@ create policy "Notes viewable if board accessible." on public.notes for select u
   );
 
 create policy "Create note if member." on public.notes for insert with check (
+    -- 1. Board Owner
     exists (
       select 1 from public.boards
-      where id = notes.board_id and (
-        owner_id = auth.uid() or
-        exists (
-           select 1 from public.board_members
-           where board_id = notes.board_id and user_id = auth.uid() and role in ('owner', 'editor')
-        )
-      )
-    ) OR 
-     exists ( -- All authenticated users can create notes on public boards for now (demo purposes)
+      where id = board_id and owner_id = auth.uid()
+    )
+    OR
+    -- 2. Board Member (Owner/Editor)
+    exists (
+      select 1 from public.board_members
+      where board_id = notes.board_id 
+      and user_id = auth.uid() 
+      and role in ('owner', 'editor')
+    )
+    OR
+    -- 3. Public Board (Open to all authenticated users)
+    exists (
       select 1 from public.boards
-      where id = notes.board_id and is_public = true
+      where id = board_id and is_public = true
     )
   );
 
