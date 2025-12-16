@@ -4,7 +4,48 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Database } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import StickyNote from "./StickyNote";
-import { Plus, Minus, Link as LinkIcon, MousePointer2 } from "lucide-react";
+import { Plus, Minus, Link as LinkIcon, MousePointer2, Share2 } from "lucide-react";
+// ... imports
+
+interface InfiniteCanvasProps {
+    initialNotes: Note[];
+    boardId: string;
+    userId: string;
+    onShare?: () => void; // Optional for now
+}
+// ...
+export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare }: InfiniteCanvasProps) {
+    // ... logic ...
+
+    return (
+        // ... previous JSX ...
+
+        {/* Create Note */ }
+        < button
+                    className = "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
+    onClick = {() => handleCreateNote(window.innerWidth / 2, window.innerHeight / 2)
+}
+title = "Add Sticky Note"
+    >
+    <Plus size={24} />
+                </button >
+
+    {/* Share Button (New Position) */ }
+{
+    onShare && (
+        <button
+            className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
+            onClick={onShare}
+            title="Share Board"
+        >
+            <Share2 size={24} />
+        </button>
+    )
+}
+            </div >
+        </div >
+    );
+}
 import { Cursor } from "./Cursor";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
