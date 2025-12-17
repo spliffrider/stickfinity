@@ -10,6 +10,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
 import { ConnectionLines } from "./ConnectionLines";
 import clsx from "clsx";
+import { AnimatePresence, motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 
 type Note = Database["public"]["Tables"]["notes"]["Row"];
@@ -44,6 +45,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     // State for Connections
     const [connections, setConnections] = useState<Database["public"]["Tables"]["connections"]["Row"][]>([]);
     const [activeConnection, setActiveConnection] = useState<{ startX: number; startY: number; currentX: number; currentY: number; startNoteId: string } | null>(null);
+    const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const channelRef = useRef<RealtimeChannel | null>(null);
@@ -391,6 +393,13 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         to_note_id: targetNoteId
                     });
 
+                    // First Connection Feedback
+                    if (!localStorage.getItem('stickfinity_first_connection')) {
+                        localStorage.setItem('stickfinity_first_connection', 'true');
+                        setFeedbackMessage("First Connection Established!");
+                        setTimeout(() => setFeedbackMessage(null), 4000);
+                    }
+
                     if (error) {
                         console.error('Error creating connection:', error);
                         setConnections(prev => prev.filter(c => c.id !== newId));
@@ -519,6 +528,26 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                     />
                 ))}
             </div>
+
+            {/* First Connection Feedback Toast */}
+            <AnimatePresence>
+                {feedbackMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: -20, x: '-50%' }}
+                        className="absolute top-10 left-1/2 z-[100] pointer-events-none"
+                    >
+                        <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white px-8 py-4 rounded-full shadow-[0_0_30px_rgba(168,85,247,0.5)] flex items-center gap-3 backdrop-blur-md border border-white/20">
+                            <span className="text-2xl">🚀</span>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-lg leading-tight">Achievement Unlocked!</span>
+                                <span className="text-sm text-white/90">{feedbackMessage}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Creation Menu (Double Click) */}
             {creationMenuPosition && (

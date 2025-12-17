@@ -16,14 +16,14 @@ interface StickyNoteProps {
     isConnecting?: boolean;
 }
 
-// Vibrant "Neon Standard" Palette
+// Glassmorphism Neon Palette
 export const NOTE_COLORS = {
-    yellow: "bg-yellow-300 border-yellow-400 selection:bg-yellow-500/30",
-    pink: "bg-pink-400 border-pink-500 selection:bg-pink-600/30",
-    orange: "bg-orange-400 border-orange-500 selection:bg-orange-600/30",
-    green: "bg-lime-400 border-lime-500 selection:bg-lime-600/30",
-    blue: "bg-cyan-300 border-cyan-400 selection:bg-cyan-500/30",
-    purple: "bg-purple-400 border-purple-500 selection:bg-purple-600/30",
+    yellow: "bg-yellow-400/80 border-yellow-300/50 shadow-yellow-500/20",
+    pink: "bg-pink-500/80 border-pink-400/50 shadow-pink-500/20",
+    orange: "bg-orange-500/80 border-orange-400/50 shadow-orange-500/20",
+    green: "bg-lime-500/80 border-lime-400/50 shadow-lime-500/20",
+    blue: "bg-cyan-400/80 border-cyan-300/50 shadow-cyan-500/20",
+    purple: "bg-purple-500/80 border-purple-400/50 shadow-purple-500/20",
 } as const;
 
 export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecting }: StickyNoteProps) {
@@ -69,11 +69,16 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
         <div
             ref={noteRef}
             className={clsx(
-                "absolute p-4 rounded-lg shadow-lg backdrop-blur-sm border transition-shadow",
-                isConnecting ? "cursor-crosshair hover:ring-2 hover:ring-cyan-400 hover:shadow-cyan-400/50" : "cursor-grab active:cursor-grabbing",
+                "absolute p-4 rounded-xl transition-all duration-200 ease-out",
+                // Glassmorphism Core
+                "backdrop-blur-md border border-t-white/30 border-l-white/20 border-r-black/10 border-b-black/20",
+                // 3D & Interaction
+                isConnecting ? "cursor-crosshair ring-2 ring-cyan-400/50" : "cursor-grab active:cursor-grabbing",
                 colorClass,
-                isEditing && "ring-2 ring-white cursor-text",
-                isDragging && "opacity-80 scale-105 z-50 shadow-2xl"
+                isEditing && "ring-2 ring-white/50 cursor-text scale-105 z-40",
+                isDragging ? "scale-110 z-50 shadow-2xl rotate-2" : "hover:scale-105 hover:-translate-y-1 hover:shadow-xl hover:z-30",
+                // Base Shadow
+                "shadow-lg"
             )}
             style={{
                 left: note.x,
@@ -87,8 +92,13 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
             }}
             data-note-id={note.id}
             onMouseLeave={() => setShowColorPicker(false)}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
         >
-            <div className="flex justify-between items-start mb-2 opacity-0 hover:opacity-100 transition-opacity">
+            {/* Inner Highlight for Depth */}
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+
+            <div className="flex justify-between items-start mb-2 opacity-0 hover:opacity-100 transition-opacity relative z-10">
                 {/* Color Picker Toggle */}
                 <div className="relative">
                     <button
@@ -96,21 +106,21 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                             e.stopPropagation();
                             setShowColorPicker(!showColorPicker);
                         }}
-                        className="p-1.5 bg-black/10 hover:bg-black/20 rounded-full text-black/50 hover:text-black transition-colors"
+                        className="p-1.5 bg-black/20 hover:bg-black/40 rounded-full text-white/70 hover:text-white transition-colors backdrop-blur-sm"
                         title="Change Color"
                     >
                         <Palette size={14} />
                     </button>
 
                     {showColorPicker && (
-                        <div className="absolute top-full left-0 mt-2 p-2 bg-white rounded-lg shadow-xl flex gap-1 z-[60] border border-gray-100 w-max"
+                        <div className="absolute top-full left-0 mt-2 p-2 bg-black/60 backdrop-blur-xl rounded-lg shadow-xl flex gap-1 z-[60] border border-white/10 w-max"
                             onMouseDown={e => e.stopPropagation()}
                         >
                             {Object.entries(NOTE_COLORS).map(([colorKey, classes]) => (
                                 <button
                                     key={colorKey}
                                     className={clsx(
-                                        "w-6 h-6 rounded-full border border-gray-200 hover:scale-110 transition-transform",
+                                        "w-6 h-6 rounded-full border border-white/20 hover:scale-110 transition-transform shadow-lg",
                                         classes.split(' ')[0] // Get bg class
                                     )}
                                     onClick={(e) => {
@@ -132,7 +142,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                             onDelete(note.id);
                         }
                     }}
-                    className="p-1.5 bg-black/10 hover:bg-red-500 hover:text-white rounded-full text-black/50 transition-colors"
+                    className="p-1.5 bg-black/20 hover:bg-red-500/80 hover:text-white rounded-full text-white/70 transition-colors backdrop-blur-sm"
                     title="Delete Note"
                 >
                     <X size={14} />
@@ -142,7 +152,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
             {isEditing ? (
                 <textarea
                     autoFocus
-                    className="w-full h-full bg-transparent resize-none border-none focus:ring-0 outline-none text-gray-900 placeholder-gray-500/50"
+                    className="w-full h-full bg-transparent resize-none border-none focus:ring-0 outline-none text-white placeholder-white/50 text-lg font-medium drop-shadow-md relative z-10"
                     placeholder="Type a note..."
                     value={content.text || ""}
                     onChange={(e) => setContent({ ...content, text: e.target.value })}
@@ -150,7 +160,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                     onMouseDown={(e) => e.stopPropagation()}
                 />
             ) : (
-                <div className="w-full h-full text-gray-900 select-none pointer-events-none font-medium">
+                <div className="w-full h-full text-white select-none pointer-events-none font-medium text-lg drop-shadow-md relative z-10">
                     {(content as any).type === 'image' && (content as any).url ? (
                         <img
                             src={(content as any).url}
