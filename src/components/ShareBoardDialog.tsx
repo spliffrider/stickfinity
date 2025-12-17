@@ -27,8 +27,8 @@ export default function ShareBoardDialog({ board, isOpen, onClose, onUpdate }: S
         setLoading(true);
         const newValue = !isPublic;
 
-        const { error } = await supabase
-            .from('boards')
+        const { error } = await (supabase
+            .from('boards') as any)
             .update({ is_public: newValue })
             .eq('id', board.id);
 
@@ -90,8 +90,8 @@ export default function ShareBoardDialog({ board, isOpen, onClose, onUpdate }: S
                             onClick={handleTogglePublic}
                             disabled={loading}
                             className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${isPublic
-                                    ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                                    : 'bg-white/10 text-white hover:bg-white/20'
+                                ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                : 'bg-white/10 text-white hover:bg-white/20'
                                 }`}
                         >
                             {loading ? "..." : (isPublic ? "Enabled" : "Enable")}

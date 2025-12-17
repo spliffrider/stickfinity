@@ -65,6 +65,7 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
                     strokeWidth="2"
                     strokeDasharray="5,5"
                     markerEnd="url(#arrowhead)"
+                    style={{ pointerEvents: 'none' }}
                 />
             )}
         </svg>
