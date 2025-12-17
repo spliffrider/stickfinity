@@ -3,8 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Database } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
-import StickyNote from "./StickyNote";
-import { Plus, Minus, Link as LinkIcon, MousePointer2, Share2 } from "lucide-react";
+import StickyNote, { NOTE_COLORS } from "./StickyNote";
+import { Plus, Minus, Link as LinkIcon, MousePointer2, Share2, X } from "lucide-react";
 import { Cursor } from "./Cursor";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
@@ -36,6 +36,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     const [dragInfo, setDragInfo] = useState<{ noteId: string; startX: number; startY: number; initialNoteX: number; initialNoteY: number } | null>(null);
     const [cursors, setCursors] = useState<Record<string, CursorData>>({});
     const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1, width: 1000, height: 1000 });
+
+    // Color State
+    const [activeColor, setActiveColor] = useState<string>('yellow');
+    const [creationMenuPosition, setCreationMenuPosition] = useState<{ x: number, y: number } | null>(null);
 
     // State for Connections
     const [connections, setConnections] = useState<Database["public"]["Tables"]["connections"]["Row"][]>([]);
@@ -200,7 +204,9 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
 
     // Canvas Interactions
     const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault();
+        // e.preventDefault();
+        // React synthetic event doesn't allow preventDefault on wheel in some browsers nicely if passive
+        // But for Next.js it works usually. 
         if (e.ctrlKey || e.metaKey) {
             // Zoom
             const zoomSensitivity = 0.001;
@@ -217,6 +223,11 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     };
 
     const handleMouseDown = async (e: React.MouseEvent) => {
+        // Clear menus on click
+        if (e.target === containerRef.current) {
+            setCreationMenuPosition(null);
+        }
+
         // Check modifiers for Zoom/Pan vs Drag
         if (e.ctrlKey || e.metaKey) {
             setIsPanning(true);
@@ -236,7 +247,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         const fromId = activeConnection.startNoteId;
                         const toId = targetNoteId;
 
-                        // Clear active connection immediately to prevent race with MouseUp
+                        // Clear active connection immediately
                         setActiveConnection(null);
 
                         // Optimistic Update
@@ -250,7 +261,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         };
                         setConnections(prev => [...prev, newConnection as any]);
 
-                        // Finish Connection (Click-Click method)
+                        // Finish Connection
                         const { error } = await (supabase.from('connections') as any).insert({
                             id: newId,
                             board_id: boardId,
@@ -260,7 +271,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
 
                         if (error) {
                             console.error('Error creating connection:', error);
-                            // Revert optimistic update
                             setConnections(prev => prev.filter(c => c.id !== newId));
                             alert('Failed to save connection: ' + error.message);
                         }
@@ -268,7 +278,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         return;
                     }
                 }
-                // Clicked empty space or same note? Cancel wiring
                 setActiveConnection(null);
                 return;
             }
@@ -356,20 +365,14 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         setIsPanning(false);
 
         if (activeConnection) {
-            console.log('MouseUp with active connection:', activeConnection);
             const target = e.target as HTMLElement;
-            console.log('Target element:', target.tagName, target.className);
-
             const noteElement = target.closest('[data-note-id]');
-            console.log('Found note element:', noteElement);
 
             // If released over a DIFFERENT note, we finish (Drag-Drop style)
             if (noteElement) {
                 const targetNoteId = noteElement.getAttribute('data-note-id');
-                console.log('Target note ID:', targetNoteId, 'Start note ID:', activeConnection.startNoteId);
 
                 if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
-
                     // Optimistic Update
                     const newId = uuidv4();
                     const newConnection = {
@@ -379,7 +382,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         to_note_id: targetNoteId,
                         created_at: new Date().toISOString()
                     };
-                    console.log('Creating connection:', newConnection);
                     setConnections(prev => [...prev, newConnection as any]);
 
                     const { error } = await (supabase.from('connections') as any).insert({
@@ -393,24 +395,15 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         console.error('Error creating connection:', error);
                         setConnections(prev => prev.filter(c => c.id !== newId));
                         alert('DB Error: ' + error.message);
-                    } else {
-                        console.log('Connection saved successfully');
                     }
 
                     setActiveConnection(null);
                     return;
-                } else {
-                    console.log('Target is same as start or invalid');
                 }
-            } else {
-                console.log('No note element found under cursor');
             }
 
-            // If released over SAME note or EMPTY space:
-            // If we are in explicit Connection Mode (toggle on), we KEEP wiring (for Click-Click style).
-            // If we are just holding Shift, we probably meant to drag-drop so cancel if missed.
+            // Drag dropped in empty space or same note?
             if (!isConnectionMode) {
-                console.log('Cancelling active connection (not in connection mode)');
                 setActiveConnection(null);
             }
         }
@@ -424,15 +417,15 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         }
     };
 
-    const handleCreateNote = async (x: number, y: number) => {
+    const handleCreateNote = async (x: number, y: number, color?: string) => {
+        setCreationMenuPosition(null);
+
         const tX = transform.x || 0;
         const tY = transform.y || 0;
         const tScale = transform.scale || 1;
 
-        console.log('Creating note at:', { x, y, tX, tY, tScale });
-
-        // Create at screen center or mouse position relative to canvas
-        // Correct for transform
+        // Determine creation coordinates
+        // If x,y passed are screen coordinates (from mouse event), transform them.
         let canvasX = (x - tX) / tScale;
         let canvasY = (y - tY) / tScale;
 
@@ -446,7 +439,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             content: { text: "" },
             x: canvasX - 100, // Center note
             y: canvasY - 100,
-            color: 'yellow' // Default
+            color: color || activeColor // Use passed color or active HUD color
         }).select().single();
 
         if (error) {
@@ -461,9 +454,9 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     };
 
     const handleDoubleClick = (e: React.MouseEvent) => {
-        // Only create if clicking background
+        // Only trigger if clicking background
         if (e.target === containerRef.current) {
-            handleCreateNote(e.clientX, e.clientY);
+            setCreationMenuPosition({ x: e.clientX, y: e.clientY });
         }
     };
 
@@ -527,6 +520,36 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 ))}
             </div>
 
+            {/* Creation Menu (Double Click) */}
+            {creationMenuPosition && (
+                <div
+                    className="absolute z-50 animate-in fade-in zoom-in duration-200"
+                    style={{ left: creationMenuPosition.x, top: creationMenuPosition.y, transform: 'translate(-50%, -50%)' }}
+                >
+                    <div className="bg-black/60 backdrop-blur-xl p-3 rounded-full flex gap-2 border border-white/10 shadow-2xl">
+                        {Object.entries(NOTE_COLORS).map(([key, classes]) => (
+                            <button
+                                key={key}
+                                className={clsx(
+                                    "w-8 h-8 rounded-full border-2 border-transparent hover:scale-125 transition-transform hover:border-white shadow-lg",
+                                    classes.split(' ')[0]
+                                )}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCreateNote(creationMenuPosition.x, creationMenuPosition.y, key);
+                                }}
+                            />
+                        ))}
+                        <button
+                            onClick={() => setCreationMenuPosition(null)}
+                            className="bg-white/10 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-white/20 ml-2"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Minimap */}
             <Minimap
                 notes={notes}
@@ -583,14 +606,34 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 {/* divider */}
                 <div className="w-px h-8 bg-white/10"></div>
 
-                {/* Create Note */}
-                <button
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
-                    onClick={() => handleCreateNote(window.innerWidth / 2, window.innerHeight / 2)}
-                    title="Add Sticky Note"
-                >
-                    <Plus size={24} />
-                </button>
+                {/* Create Note Group */}
+                <div className="glass-panel p-1.5 rounded-full flex gap-3 items-center pointer-events-auto bg-black/50 backdrop-blur-xl border border-white/10 pr-1.5">
+                    {/* Color Picker (Compact) */}
+                    <div className="flex gap-1 pl-2">
+                        {Object.entries(NOTE_COLORS).map(([key, classes]) => (
+                            <button
+                                key={key}
+                                className={clsx(
+                                    "w-5 h-5 rounded-full transition-transform hover:scale-125 box-content border border-transparent",
+                                    classes.split(' ')[0],
+                                    activeColor === key ? "scale-125 border-white ring-2 ring-white/20 shadow-lg" : "opacity-70 hover:opacity-100"
+                                )}
+                                onClick={() => setActiveColor(key)}
+                                title={key}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="w-px h-6 bg-white/10 mx-1"></div>
+
+                    <button
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-full p-3 shadow-lg transition-transform hover:scale-110 active:scale-95 border border-white/20"
+                        onClick={() => handleCreateNote(window.innerWidth / 2, window.innerHeight / 2)}
+                        title="Add Sticky Note"
+                    >
+                        <Plus size={20} />
+                    </button>
+                </div>
 
                 {/* Share Button (New Position) */}
                 {onShare && (
