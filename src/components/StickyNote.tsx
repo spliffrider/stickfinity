@@ -152,7 +152,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
             {isEditing ? (
                 <textarea
                     autoFocus
-                    className="w-full h-full bg-transparent resize-none border-none focus:ring-0 outline-none text-white placeholder-white/50 text-lg font-medium drop-shadow-md relative z-10"
+                    className="w-full h-full bg-transparent resize-none border-none focus:ring-0 outline-none text-white placeholder-white/50 text-3xl font-medium drop-shadow-md relative z-10 leading-tight"
                     placeholder="Type a note..."
                     value={content.text || ""}
                     onChange={(e) => setContent({ ...content, text: e.target.value })}
@@ -160,7 +160,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                     onMouseDown={(e) => e.stopPropagation()}
                 />
             ) : (
-                <div className="w-full h-full text-white select-none pointer-events-none font-medium text-lg drop-shadow-md relative z-10">
+                <div className="w-full h-full text-white select-none pointer-events-none font-medium text-3xl drop-shadow-md relative z-10 leading-tight">
                     {(content as any).type === 'image' && (content as any).url ? (
                         <img
                             src={(content as any).url}
