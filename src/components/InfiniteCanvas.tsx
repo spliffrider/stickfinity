@@ -10,6 +10,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
 import { ConnectionLines } from "./ConnectionLines";
 import clsx from "clsx";
+import { v4 as uuidv4 } from 'uuid';
 
 type Note = Database["public"]["Tables"]["notes"]["Row"];
 
@@ -100,7 +101,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 },
                 (payload) => {
                     if (payload.eventType === 'INSERT') {
-                        setConnections((prev) => [...prev, payload.new as any]); // Type cast for simplicity
+                        setConnections((prev) => {
+                            if (prev.find(c => c.id === payload.new.id)) return prev;
+                            return [...prev, payload.new as any];
+                        });
                     } else if (payload.eventType === 'DELETE') {
                         setConnections((prev) => prev.filter(c => c.id !== payload.old.id));
                     }
@@ -236,9 +240,9 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         setActiveConnection(null);
 
                         // Optimistic Update
-                        const tempId = Math.random().toString();
+                        const newId = uuidv4();
                         const newConnection = {
-                            id: tempId,
+                            id: newId,
                             board_id: boardId,
                             from_note_id: fromId,
                             to_note_id: toId,
@@ -247,20 +251,18 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         setConnections(prev => [...prev, newConnection as any]);
 
                         // Finish Connection (Click-Click method)
-                        const { data, error } = await (supabase.from('connections') as any).insert({
+                        const { error } = await (supabase.from('connections') as any).insert({
+                            id: newId,
                             board_id: boardId,
                             from_note_id: fromId,
                             to_note_id: toId
-                        }).select().single();
+                        });
 
                         if (error) {
                             console.error('Error creating connection:', error);
                             // Revert optimistic update
-                            setConnections(prev => prev.filter(c => c.id !== tempId));
+                            setConnections(prev => prev.filter(c => c.id !== newId));
                             alert('Failed to save connection: ' + error.message);
-                        } else {
-                            // Replace temp ID with real ID
-                            setConnections(prev => prev.map(c => c.id === tempId ? (data as any) : c));
                         }
 
                         return;
@@ -354,47 +356,61 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         setIsPanning(false);
 
         if (activeConnection) {
+            console.log('MouseUp with active connection:', activeConnection);
             const target = e.target as HTMLElement;
+            console.log('Target element:', target.tagName, target.className);
+
             const noteElement = target.closest('[data-note-id]');
+            console.log('Found note element:', noteElement);
 
             // If released over a DIFFERENT note, we finish (Drag-Drop style)
             if (noteElement) {
                 const targetNoteId = noteElement.getAttribute('data-note-id');
+                console.log('Target note ID:', targetNoteId, 'Start note ID:', activeConnection.startNoteId);
+
                 if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
 
                     // Optimistic Update
-                    const tempId = Math.random().toString();
+                    const newId = uuidv4();
                     const newConnection = {
-                        id: tempId,
+                        id: newId,
                         board_id: boardId,
                         from_note_id: activeConnection.startNoteId,
                         to_note_id: targetNoteId,
                         created_at: new Date().toISOString()
                     };
+                    console.log('Creating connection:', newConnection);
                     setConnections(prev => [...prev, newConnection as any]);
 
-                    const { data, error } = await (supabase.from('connections') as any).insert({
+                    const { error } = await (supabase.from('connections') as any).insert({
+                        id: newId,
                         board_id: boardId,
                         from_note_id: activeConnection.startNoteId,
                         to_note_id: targetNoteId
-                    }).select().single();
+                    });
 
                     if (error) {
                         console.error('Error creating connection:', error);
-                        setConnections(prev => prev.filter(c => c.id !== tempId));
+                        setConnections(prev => prev.filter(c => c.id !== newId));
+                        alert('DB Error: ' + error.message);
                     } else {
-                        setConnections(prev => prev.map(c => c.id === tempId ? (data as any) : c));
+                        console.log('Connection saved successfully');
                     }
 
                     setActiveConnection(null);
                     return;
+                } else {
+                    console.log('Target is same as start or invalid');
                 }
+            } else {
+                console.log('No note element found under cursor');
             }
 
             // If released over SAME note or EMPTY space:
             // If we are in explicit Connection Mode (toggle on), we KEEP wiring (for Click-Click style).
             // If we are just holding Shift, we probably meant to drag-drop so cancel if missed.
             if (!isConnectionMode) {
+                console.log('Cancelling active connection (not in connection mode)');
                 setActiveConnection(null);
             }
         }
