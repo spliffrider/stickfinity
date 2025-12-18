@@ -37,23 +37,22 @@ export default function BackgroundMusic() {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
-
-            {/* Credit Link */}
-            <a
-                href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[10px] text-gray-400 hover:text-white transition-all duration-300 mr-2 opacity-80 hover:opacity-100"
-            >
-                John B - Up All Night (Epic Mix)
-            </a>
-
+        <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2">
             {/* Player Control */}
             <div className={clsx(
                 "glass-panel p-3 rounded-full flex items-center gap-3 transition-all duration-300 border border-white/10 shadow-2xl bg-black/40 backdrop-blur-xl",
                 isPlaying ? "pr-4" : "pr-3"
             )}>
+                {/* Credit Link (Integrated) */}
+                <a
+                    href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-gray-400 hover:text-white transition-all duration-300 mr-2 opacity-80 hover:opacity-100 whitespace-nowrap hidden sm:block"
+                >
+                    John B - Up All Night (Epic Mix)
+                </a>
+
                 {/* Visualizer (Fake) */}
                 {isPlaying && (
                     <div className="flex items-end gap-[2px] h-4 w-8 mx-1">
@@ -75,7 +74,7 @@ export default function BackgroundMusic() {
 
                 <button
                     onClick={togglePlay}
-                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all ring-1 ring-white/20 hover:ring-white/50"
+                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all ring-1 ring-white/20 hover:ring-white/50 shrink-0"
                     title={isPlaying ? "Pause Music" : "Play Music"}
                 >
                     {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
@@ -85,7 +84,7 @@ export default function BackgroundMusic() {
                 {(isPlaying || hasInteracted) && (
                     <button
                         onClick={toggleMute}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0"
                         title={isMuted ? "Unmute" : "Mute"}
                     >
                         {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
