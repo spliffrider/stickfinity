@@ -5,11 +5,16 @@ import React, { useState, useRef, useEffect } from "react";
 import { Volume2, VolumeX, Play, Pause, Music } from "lucide-react";
 import clsx from "clsx";
 
+import { usePathname } from "next/navigation";
+
 export default function BackgroundMusic() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [hasInteracted, setHasInteracted] = useState(false);
+    const pathname = usePathname();
+
+    const positionClass = pathname?.includes("/board/") ? "bottom-24" : "bottom-4";
 
     useEffect(() => {
         // Attempt auto-play if possible, but usually requires interaction
@@ -37,7 +42,7 @@ export default function BackgroundMusic() {
     };
 
     return (
-        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+        <div className={`fixed ${positionClass} left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 transition-all duration-300`}>
             {/* Credit Link */}
             <a
                 href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
