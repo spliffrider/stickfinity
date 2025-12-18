@@ -13,7 +13,7 @@ import ShareBoardDialog from "@/components/ShareBoardDialog";
 
 type Board = Database["public"]["Tables"]["boards"]["Row"];
 
-import ThemeToggle from "@/components/ThemeToggle";
+
 
 export default function BoardPage() {
     const params = useParams();
@@ -99,7 +99,6 @@ export default function BoardPage() {
 
                 {/* Right Actions */}
                 <div className="flex gap-3 pointer-events-auto">
-                    <ThemeToggle />
                     {board && (
                         <button
                             onClick={() => setIsShareOpen(true)}

@@ -12,8 +12,7 @@ import { ConnectionLines } from "./ConnectionLines";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
-import { useTheme } from "./ThemeProvider";
-import SpaceBackground from "./SpaceBackground";
+import SpaceBackground from "./SpaceBackground"; // DIRECT IMPORT
 
 type Note = Database["public"]["Tables"]["notes"]["Row"];
 
@@ -32,7 +31,7 @@ interface CursorData {
 }
 
 export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare }: InfiniteCanvasProps) {
-    const { theme } = useTheme();
+    // REMOVED THEME HOOK
 
     const [notes, setNotes] = useState<Note[]>(initialNotes);
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
@@ -129,8 +128,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 const newCursors: Record<string, CursorData> = {};
                 for (const key in newState) {
                     const userCursors = newState[key] as any[];
-                    // Allow multiple devices per user, or just take last. 
-                    // Supabase presence is array of objects.
                     userCursors.forEach(cursor => {
                         if (cursor.userId && cursor.userId !== effectiveUserId) {
                             newCursors[cursor.userId] = cursor;
@@ -190,7 +187,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         .getPublicUrl(filename);
 
                     // 3. Create Note with Image
-                    // Center of screen relative to canvas
                     const centerX = (window.innerWidth / 2 - transform.x) / transform.scale;
                     const centerY = (window.innerHeight / 2 - transform.y) / transform.scale;
 
@@ -214,16 +210,11 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
 
     // Canvas Interactions
     const handleWheel = (e: React.WheelEvent) => {
-        // e.preventDefault();
-        // React synthetic event doesn't allow preventDefault on wheel in some browsers nicely if passive
-        // But for Next.js it works usually. 
         if (e.ctrlKey || e.metaKey) {
-            // Zoom
             const zoomSensitivity = 0.001;
             const newScale = Math.min(Math.max(0.1, transform.scale - e.deltaY * zoomSensitivity), 5);
             setTransform(prev => ({ ...prev, scale: newScale }));
         } else {
-            // Pan
             setTransform(prev => ({
                 ...prev,
                 x: prev.x - e.deltaX,
@@ -233,23 +224,19 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     };
 
     const handleMouseDown = async (e: React.MouseEvent) => {
-        // Clear menus on click
         if (e.target === containerRef.current) {
             setCreationMenuPosition(null);
         }
 
-        // Check modifiers for Zoom/Pan vs Drag
         if (e.ctrlKey || e.metaKey) {
             setIsPanning(true);
             return;
         }
 
-        // Connection Mode Logic
         if (e.shiftKey || isConnectionMode) {
             const target = e.target as HTMLElement;
             const noteElement = target.closest('[data-note-id]');
 
-            // Case 1: We are already wiring and clicked something
             if (activeConnection) {
                 if (noteElement) {
                     const targetNoteId = noteElement.getAttribute('data-note-id');
@@ -257,10 +244,8 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         const fromId = activeConnection.startNoteId;
                         const toId = targetNoteId;
 
-                        // Clear active connection immediately
                         setActiveConnection(null);
 
-                        // Optimistic Update
                         const newId = uuidv4();
                         const newConnection = {
                             id: newId,
@@ -271,7 +256,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         };
                         setConnections(prev => [...prev, newConnection as any]);
 
-                        // Finish Connection
                         const { error } = await (supabase.from('connections') as any).insert({
                             id: newId,
                             board_id: boardId,
@@ -284,7 +268,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                             setConnections(prev => prev.filter(c => c.id !== newId));
                             alert('Failed to save connection: ' + error.message);
                         }
-
                         return;
                     }
                 }
@@ -292,7 +275,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 return;
             }
 
-            // Case 2: Start new wiring
             if (noteElement) {
                 const noteId = noteElement.getAttribute('data-note-id');
                 const note = notes.find(n => n.id === noteId);
@@ -313,7 +295,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             }
         }
 
-        // Standard Note Dragging
         const target = e.target as HTMLElement;
         const noteElement = target.closest('[data-note-id]');
 
@@ -378,12 +359,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             const target = e.target as HTMLElement;
             const noteElement = target.closest('[data-note-id]');
 
-            // If released over a DIFFERENT note, we finish (Drag-Drop style)
             if (noteElement) {
                 const targetNoteId = noteElement.getAttribute('data-note-id');
 
                 if (targetNoteId && targetNoteId !== activeConnection.startNoteId) {
-                    // Optimistic Update
                     const newId = uuidv4();
                     const newConnection = {
                         id: newId,
@@ -401,7 +380,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         to_note_id: targetNoteId
                     });
 
-                    // First Connection Feedback
                     if (!localStorage.getItem('stickfinity_first_connection')) {
                         localStorage.setItem('stickfinity_first_connection', 'true');
                         setFeedbackMessage("First Connection Established!");
@@ -418,8 +396,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                     return;
                 }
             }
-
-            // Drag dropped in empty space or same note?
             if (!isConnectionMode) {
                 setActiveConnection(null);
             }
@@ -441,12 +417,9 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         const tY = transform.y || 0;
         const tScale = transform.scale || 1;
 
-        // Determine creation coordinates
-        // If x,y passed are screen coordinates (from mouse event), transform them.
         let canvasX = (x - tX) / tScale;
         let canvasY = (y - tY) / tScale;
 
-        // Nan Check
         if (isNaN(canvasX)) canvasX = 0;
         if (isNaN(canvasY)) canvasY = 0;
 
@@ -456,7 +429,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             content: { text: "" },
             x: canvasX - 100, // Center note
             y: canvasY - 100,
-            color: color || activeColor // Use passed color or active HUD color
+            color: color || activeColor
         }).select().single();
 
         if (error) {
@@ -471,7 +444,6 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     };
 
     const handleDoubleClick = (e: React.MouseEvent) => {
-        // Only trigger if clicking background
         if (e.target === containerRef.current) {
             setCreationMenuPosition({ x: e.clientX, y: e.clientY });
         }
@@ -501,7 +473,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             onDoubleClick={handleDoubleClick}
             ref={containerRef}
         >
-            {theme === 'space' && <SpaceBackground />}
+            <SpaceBackground />
 
             <div
                 className="absolute origin-top-left transition-transform duration-75 ease-out"
