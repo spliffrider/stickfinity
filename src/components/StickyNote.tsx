@@ -55,27 +55,32 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
         }
     }, [note.content, isEditing]);
 
+    const saveNote = (text: string) => {
+        const currentText = text || "";
+        const originalContent = safeParseContent(note.content);
+        const originalText = originalContent?.text || "";
+
+        if (currentText !== originalText) {
+            onUpdate(note.id, {
+                content: {
+                    ...(originalContent || {}),
+                    text: currentText
+                }
+            });
+        }
+    };
+
     // Autosave on content change (debounced)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            const currentText = content.text || "";
-            const originalContent = safeParseContent(note.content);
-            const originalText = originalContent?.text || "";
-
-            if (currentText !== originalText) {
-                onUpdate(note.id, {
-                    content: {
-                        ...(originalContent || {}),
-                        text: currentText
-                    }
-                });
-            }
+            saveNote(content.text || "");
         }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [content, note.content, note.id, onUpdate]);
 
     const handleBlur = () => {
+        saveNote(content.text || "");
         setIsEditing(false);
     };
 
