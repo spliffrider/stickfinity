@@ -11,8 +11,44 @@ const SpaceBackground = dynamic(() => import("@/components/SpaceBackground"), { 
 const BackgroundMusic = dynamic(() => import("@/components/BackgroundMusic"), { ssr: false });
 
 export default function AuthPage() {
-    // Auth Page with Music Integration
-    // ... existing code ...
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+    const router = useRouter();
+
+    const handleAuth = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage(null);
+
+        if (isSignUp) {
+            const { error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                },
+            });
+            if (error) {
+                setMessage({ text: error.message, type: 'error' });
+            } else {
+                setMessage({ text: "Check your email for the confirmation link!", type: 'success' });
+            }
+        } else {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+            if (error) {
+                setMessage({ text: error.message, type: 'error' });
+            } else {
+                router.push("/dashboard");
+            }
+        }
+        setLoading(false);
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden text-white">
