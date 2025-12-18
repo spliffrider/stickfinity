@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 
 const SpaceBackground = dynamic(() => import("@/components/SpaceBackground"), { ssr: false });
-const BackgroundMusic = dynamic(() => import("@/components/BackgroundMusic"), { ssr: false });
+// BackgroundMusic moved to global layout
 
 export default function AuthPage() {
     const [email, setEmail] = useState("");
@@ -53,7 +53,6 @@ export default function AuthPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden text-white">
             <SpaceBackground />
-            <BackgroundMusic />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

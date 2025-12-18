@@ -5,6 +5,9 @@ export const metadata: Metadata = {
     description: "Infinite collaborative sticky notes",
 };
 
+import dynamic from "next/dynamic";
+const BackgroundMusic = dynamic(() => import("@/components/BackgroundMusic"), { ssr: false });
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -121,7 +124,10 @@ export default function RootLayout({
                     `
                 }} />
             </head>
-            <body>{children}</body>
+            <body>
+                <BackgroundMusic />
+                {children}
+            </body>
         </html>
     );
 }
