@@ -20,9 +20,6 @@ export default function AuthPage() {
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                // ... rest of the component
-
-                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
                 className="z-10 w-full max-w-md p-8"
