@@ -37,7 +37,7 @@ export default function BackgroundMusic() {
     };
 
     return (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
             {/* Credit Link */}
             <a
                 href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
