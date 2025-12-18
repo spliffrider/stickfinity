@@ -43,15 +43,7 @@ export default function BackgroundMusic() {
                 "glass-panel p-3 rounded-full flex items-center gap-3 transition-all duration-300 border border-white/10 shadow-2xl bg-black/40 backdrop-blur-xl",
                 isPlaying ? "pr-4" : "pr-3"
             )}>
-                {/* Credit Link (Integrated) */}
-                <a
-                    href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[10px] text-gray-400 hover:text-white transition-all duration-300 mr-2 opacity-80 hover:opacity-100 whitespace-nowrap hidden sm:block"
-                >
-                    John B - Up All Night (Epic Mix)
-                </a>
+                {/* Credit Link removed temporarily for debugging */}
 
                 {/* Visualizer (Fake) */}
                 {isPlaying && (
