@@ -8,50 +8,20 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 
 const SpaceBackground = dynamic(() => import("@/components/SpaceBackground"), { ssr: false });
+const BackgroundMusic = dynamic(() => import("@/components/BackgroundMusic"), { ssr: false });
 
 export default function AuthPage() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [isSignUp, setIsSignUp] = useState(false);
-    const [message, setMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
-    const router = useRouter();
-
-    const handleAuth = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-
-        setMessage(null);
-
-        if (isSignUp) {
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-            });
-            if (error) {
-                setMessage({ text: error.message, type: 'error' });
-            } else {
-                setMessage({ text: "Check your email for the confirmation link!", type: 'success' });
-            }
-        } else {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-            if (error) {
-                setMessage({ text: error.message, type: 'error' });
-            } else {
-                router.push("/dashboard");
-            }
-        }
-        setLoading(false);
-    };
+    // ... existing code ...
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden text-white">
             <SpaceBackground />
+            <BackgroundMusic />
 
             <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                // ... rest of the component
+
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
