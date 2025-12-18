@@ -30,13 +30,28 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
     const [isDragging, setIsDragging] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
-    const [content, setContent] = useState(note.content as { text?: string } || { text: "" });
+
+    // Robust parsing of content prop
+    const safeParseContent = (rawContent: any) => {
+        if (!rawContent) return { text: "" };
+        if (typeof rawContent === 'string') {
+            try {
+                const parsed = JSON.parse(rawContent);
+                return typeof parsed === 'object' ? parsed : { text: parsed };
+            } catch {
+                return { text: rawContent };
+            }
+        }
+        return rawContent; // Already an object
+    };
+
+    const [content, setContent] = useState(safeParseContent(note.content));
     const noteRef = useRef<HTMLDivElement>(null);
 
     // Sync state with prop if note updates from outside (e.g. realtime)
     useEffect(() => {
         if (!isEditing) {
-            setContent(note.content as { text?: string } || { text: "" });
+            setContent(safeParseContent(note.content));
         }
     }, [note.content, isEditing]);
 
