@@ -1,11 +1,9 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { X, Palette } from "lucide-react";
 import { Database } from "@/lib/database.types";
 import clsx from "clsx";
-import { useTheme } from "./ThemeProvider";
 
 type Note = Database["public"]["Tables"]["notes"]["Row"];
 
@@ -17,34 +15,18 @@ interface StickyNoteProps {
     isConnecting?: boolean;
 }
 
-// 1. Teal/Pastel Palette
-const NOTE_COLORS_TEAL = {
-    yellow: "bg-yellow-50 border-yellow-200 text-yellow-900",
-    pink: "bg-pink-50 border-pink-200 text-pink-900",
-    orange: "bg-orange-50 border-orange-200 text-orange-900",
-    green: "bg-emerald-50 border-emerald-200 text-emerald-900",
-    blue: "bg-sky-50 border-sky-200 text-sky-900",
-    purple: "bg-purple-50 border-purple-200 text-purple-900",
-    white: "bg-white border-gray-200 text-slate-800",
-} as const;
-
-// 2. Space/Neon Palette
-const NOTE_COLORS_SPACE = {
+// RESTORED SPACE PALETTE
+export const NOTE_COLORS = {
     yellow: "bg-yellow-400/80 border-yellow-300/50 shadow-yellow-500/20 text-white",
     pink: "bg-pink-500/80 border-pink-400/50 shadow-pink-500/20 text-white",
     orange: "bg-orange-500/80 border-orange-400/50 shadow-orange-500/20 text-white",
     green: "bg-lime-500/80 border-lime-400/50 shadow-lime-500/20 text-white",
     blue: "bg-cyan-400/80 border-cyan-300/50 shadow-cyan-500/20 text-white",
     purple: "bg-purple-500/80 border-purple-400/50 shadow-purple-500/20 text-white",
-    white: "bg-white/10 border-white/20 shadow-white/10 text-white backdrop-blur-xl", // "Glass" equivalent of white
+    white: "bg-white/10 border-white/20 shadow-white/10 text-white backdrop-blur-xl",
 } as const;
 
-export const NOTE_COLORS = NOTE_COLORS_TEAL; // Export regular for other uses just in case
-
 export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecting }: StickyNoteProps) {
-    const { theme } = useTheme();
-    const colors = theme === 'space' ? NOTE_COLORS_SPACE : NOTE_COLORS_TEAL;
-
     const [isDragging, setIsDragging] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -66,7 +48,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
     const [content, setContent] = useState(safeParseContent(note.content));
     const noteRef = useRef<HTMLDivElement>(null);
 
-    // Sync state with prop if note updates from outside (e.g. realtime)
+    // Sync state with prop
     useEffect(() => {
         if (!isEditing) {
             setContent(safeParseContent(note.content));
@@ -88,12 +70,11 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
         }
     };
 
-    // Autosave on content change (debounced)
+    // Autosave
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             saveNote(content.text || "");
         }, 500);
-
         return () => clearTimeout(timeoutId);
     }, [content, note.content, note.id, onUpdate]);
 
@@ -102,19 +83,13 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
         setIsEditing(false);
     };
 
-    const colorClass = (colors as any)[note.color] || (colors as any).yellow || (colors as any).white;
-
-    // Theme Specific Classes
-    const containerClasses = theme === 'space'
-        ? "backdrop-blur-md border border-t-white/30 border-l-white/20 border-r-black/10 border-b-black/20 p-4 rounded-xl shadow-lg"
-        : "border shadow-sm hover:shadow-md p-6 rounded-2xl flex flex-col";
+    const colorClass = (NOTE_COLORS as any)[note.color] || NOTE_COLORS.white;
 
     return (
         <div
             ref={noteRef}
             className={clsx(
-                "absolute transition-all duration-200 ease-out",
-                containerClasses,
+                "absolute transition-all duration-200 ease-out backdrop-blur-md border border-t-white/30 border-l-white/20 border-r-black/10 border-b-black/20 p-4 rounded-xl shadow-lg",
                 isConnecting ? "cursor-crosshair ring-2 ring-emerald-400" : "cursor-grab active:cursor-grabbing",
                 colorClass,
                 isEditing && "ring-2 ring-emerald-400 cursor-text z-40 shadow-lg scale-105",
@@ -144,28 +119,21 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                             e.stopPropagation();
                             setShowColorPicker(!showColorPicker);
                         }}
-                        className={clsx(
-                            "p-1.5 rounded-full transition-colors shadow-sm ring-1",
-                            theme === 'space' ? "bg-black/20 text-white/70 hover:bg-black/40 hover:text-white" : "bg-white/50 text-gray-500 hover:bg-white hover:text-gray-800 ring-black/5"
-                        )}
+                        className="p-1.5 rounded-full transition-colors shadow-sm ring-1 bg-black/20 text-white/70 hover:bg-black/40 hover:text-white"
                         title="Change Color"
                     >
                         <Palette size={14} />
                     </button>
 
                     {showColorPicker && (
-                        <div className={clsx(
-                            "absolute top-full left-0 mt-2 p-2 rounded-xl shadow-xl flex gap-1 z-[60] w-max",
-                            theme === 'space' ? "bg-black/60 backdrop-blur-xl border border-white/10" : "bg-white border border-gray-100"
-                        )}
+                        <div className="absolute top-full left-0 mt-2 p-2 rounded-xl shadow-xl flex gap-1 z-[60] w-max bg-black/60 backdrop-blur-xl border border-white/10"
                             onMouseDown={e => e.stopPropagation()}
                         >
-                            {Object.entries(colors).map(([colorKey, classes]) => (
+                            {Object.entries(NOTE_COLORS).map(([colorKey, classes]) => (
                                 <button
                                     key={colorKey}
                                     className={clsx(
                                         "w-6 h-6 rounded-full transition-transform hover:scale-110",
-                                        theme === 'teal' && "border border-gray-200",
                                         (classes as string).split(' ')[0] // Get bg class
                                     )}
                                     onClick={(e) => {
@@ -187,10 +155,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                             onDelete(note.id);
                         }
                     }}
-                    className={clsx(
-                        "p-1.5 rounded-full transition-colors shadow-sm ring-1",
-                        theme === 'space' ? "bg-black/20 text-white/70 hover:bg-red-500/80 hover:text-white" : "bg-white/50 text-gray-400 hover:bg-red-50 hover:text-red-500 ring-black/5"
-                    )}
+                    className="p-1.5 rounded-full transition-colors shadow-sm ring-1 bg-black/20 text-white/70 hover:bg-red-500/80 hover:text-white"
                     title="Delete Note"
                 >
                     <X size={14} />
@@ -201,10 +166,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
             {isEditing ? (
                 <textarea
                     autoFocus
-                    className={clsx(
-                        "w-full h-full bg-transparent resize-none border-none focus:ring-0 outline-none placeholder-opacity-50 font-medium relative z-10 leading-tight",
-                        theme === 'space' ? "text-white placeholder-white/50 text-3xl drop-shadow-md" : "text-current placeholder-gray-400 text-2xl"
-                    )}
+                    className="w-full h-full bg-transparent resize-none border-none focus:ring-0 outline-none placeholder-opacity-50 font-medium relative z-10 leading-tight text-white placeholder-white/50 text-3xl drop-shadow-md"
                     placeholder="Type a note..."
                     value={content.text || ""}
                     onChange={(e) => setContent({ ...content, text: e.target.value })}
@@ -212,10 +174,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                     onMouseDown={(e) => e.stopPropagation()}
                 />
             ) : (
-                <div className={clsx(
-                    "w-full h-full select-none pointer-events-none font-medium relative z-10 leading-tight",
-                    theme === 'space' ? "text-white text-3xl drop-shadow-md" : "text-current text-2xl"
-                )}>
+                <div className="w-full h-full select-none pointer-events-none font-medium relative z-10 leading-tight text-white text-3xl drop-shadow-md">
                     {(content as any).type === 'image' && (content as any).url ? (
                         <img
                             src={(content as any).url}
