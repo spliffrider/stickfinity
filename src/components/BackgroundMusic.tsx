@@ -44,10 +44,7 @@ export default function BackgroundMusic() {
                 href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
                 target="_blank"
                 rel="noreferrer"
-                className={clsx(
-                    "text-[10px] text-gray-400 hover:text-white transition-all duration-500 mr-2",
-                    (isPlaying || hasInteracted) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-                )}
+                className="text-[10px] text-gray-400 hover:text-white transition-all duration-300 mr-2 opacity-80 hover:opacity-100"
             >
                 John B - Up All Night (Epic Mix)
             </a>
