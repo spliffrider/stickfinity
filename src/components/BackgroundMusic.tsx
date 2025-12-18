@@ -56,7 +56,7 @@ export default function BackgroundMusic() {
 
                 <audio
                     ref={audioRef}
-                    src="/music/John B- Up All Night.mp3"
+                    src="/music/background.mp3"
                     loop
                     onEnded={() => setIsPlaying(false)}
                     onPlay={() => setIsPlaying(true)}
