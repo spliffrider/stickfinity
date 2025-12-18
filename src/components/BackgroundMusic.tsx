@@ -2,26 +2,48 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Volume2, VolumeX, Play, Pause, Music } from "lucide-react";
+import { Volume2, VolumeX, Play, Pause, SkipForward } from "lucide-react";
 import clsx from "clsx";
-
 import { usePathname } from "next/navigation";
+
+const PLAYLIST = [
+    {
+        title: "John B - Up All Night (Epic Mix)",
+        src: "/music/background.mp3",
+        link: "https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
+    },
+    {
+        title: "First Date",
+        src: "/music/03 - First Date.flac",
+        link: null
+    }
+];
 
 export default function BackgroundMusic() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
     const audioRef = useRef<HTMLAudioElement>(null);
     const [hasInteracted, setHasInteracted] = useState(false);
     const pathname = usePathname();
 
     const positionClass = pathname?.includes("/board/") ? "bottom-24" : "bottom-4";
+    const currentTrack = PLAYLIST[currentTrackIndex];
 
     useEffect(() => {
-        // Attempt auto-play if possible, but usually requires interaction
+        // Volume Init
         if (audioRef.current) {
-            audioRef.current.volume = 0.3; // Start subtle
+            audioRef.current.volume = 0.3;
         }
     }, []);
+
+    // Effect to handle track changes when playing
+    useEffect(() => {
+        if (isPlaying && audioRef.current) {
+            audioRef.current.play().catch(e => console.error("Playback failed", e));
+        }
+    }, [currentTrackIndex]);
 
     const togglePlay = () => {
         if (!audioRef.current) return;
@@ -41,17 +63,29 @@ export default function BackgroundMusic() {
         setIsMuted(!isMuted);
     };
 
+    const handleNext = () => {
+        setHasInteracted(true);
+        setCurrentTrackIndex((prev) => (prev + 1) % PLAYLIST.length);
+        setIsPlaying(true); // Auto play next
+    };
+
     return (
         <div className={`fixed ${positionClass} left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 transition-all duration-300`}>
             {/* Credit Link */}
-            <a
-                href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] text-gray-400 hover:text-white transition-colors bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 hover:border-white/20 shadow-lg"
-            >
-                🎵 John B - Up All Night (Epic Mix)
-            </a>
+            {currentTrack.link ? (
+                <a
+                    href={currentTrack.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-gray-400 hover:text-white transition-colors bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 hover:border-white/20 shadow-lg truncate max-w-[200px]"
+                >
+                    🎵 {currentTrack.title}
+                </a>
+            ) : (
+                <span className="text-[10px] text-gray-400 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 shadow-lg truncate max-w-[200px]">
+                    🎵 {currentTrack.title}
+                </span>
+            )}
 
             {/* Player Control */}
             <div className={clsx(
@@ -70,9 +104,9 @@ export default function BackgroundMusic() {
 
                 <audio
                     ref={audioRef}
-                    src="/music/background.mp3"
-                    loop
-                    onEnded={() => setIsPlaying(false)}
+                    src={currentTrack.src}
+                    // Loop handled manually for playlist
+                    onEnded={handleNext}
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
                 />
@@ -83,6 +117,15 @@ export default function BackgroundMusic() {
                     title={isPlaying ? "Pause Music" : "Play Music"}
                 >
                     {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                </button>
+
+                {/* Next Button */}
+                <button
+                    onClick={handleNext}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0 hover:bg-white/10"
+                    title="Next Track"
+                >
+                    <SkipForward size={16} fill="currentColor" />
                 </button>
 
                 {/* Volume Toggle (Only show if playing or interacted) */}

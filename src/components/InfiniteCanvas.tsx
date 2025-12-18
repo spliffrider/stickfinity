@@ -12,6 +12,8 @@ import { ConnectionLines } from "./ConnectionLines";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
+import { useTheme } from "./ThemeProvider";
+import SpaceBackground from "./SpaceBackground";
 
 type Note = Database["public"]["Tables"]["notes"]["Row"];
 
@@ -30,6 +32,8 @@ interface CursorData {
 }
 
 export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare }: InfiniteCanvasProps) {
+    const { theme } = useTheme();
+
     const [notes, setNotes] = useState<Note[]>(initialNotes);
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
     const [isPanning, setIsPanning] = useState(false);
@@ -497,6 +501,8 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             onDoubleClick={handleDoubleClick}
             ref={containerRef}
         >
+            {theme === 'space' && <SpaceBackground />}
+
             <div
                 className="absolute origin-top-left transition-transform duration-75 ease-out"
                 style={{
@@ -594,16 +600,22 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 pointer-events-none z-50">
 
                 {/* Tools */}
-                <div className="glass-panel p-2 rounded-full flex gap-2 pointer-events-auto shadow-2xl bg-black/50 backdrop-blur-xl border border-white/10">
+                <div className="glass-panel p-2 flex gap-2 pointer-events-auto">
                     <button
-                        className={`p-3 rounded-full transition-all ${!isConnectionMode ? 'bg-indigo-600 text-white shadow-glow' : 'hover:bg-white/10 text-gray-400'}`}
+                        className={clsx(
+                            "p-3 rounded-full transition-all",
+                            !isConnectionMode ? "glass-button" : "glass-button opacity-50"
+                        )}
                         onClick={() => setIsConnectionMode(false)}
                         title="Move / Select"
                     >
                         <MousePointer2 size={20} />
                     </button>
                     <button
-                        className={`p-3 rounded-full transition-all ${isConnectionMode ? 'bg-cyan-500 text-white shadow-glow' : 'hover:bg-white/10 text-gray-400'}`}
+                        className={clsx(
+                            "p-3 rounded-full transition-all",
+                            isConnectionMode ? "glass-button" : "glass-button opacity-50"
+                        )}
                         onClick={() => setIsConnectionMode(true)}
                         title="Connect Notes"
                     >
@@ -611,45 +623,39 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                     </button>
                 </div>
 
-                {/* divider */}
-                <div className="w-px h-8 bg-white/10"></div>
-
                 {/* Zoom Controls */}
-                <div className="glass-panel p-2 rounded-full flex items-center gap-2 pointer-events-auto bg-black/50 backdrop-blur-xl border border-white/10">
+                <div className="glass-panel p-2 flex items-center gap-2 pointer-events-auto text-current">
                     <button
-                        className="p-3 hover:bg-white/10 rounded-full text-white transition-colors"
+                        className="p-3 hover:bg-black/10 rounded-full transition-colors"
                         onClick={() => setTransform(prev => ({ ...prev, scale: Math.max(0.1, prev.scale - 0.1) }))}
                     >
                         <Minus size={20} />
                     </button>
-                    <span className="w-16 text-center font-mono text-sm text-gray-300 select-none cursor-pointer"
+                    <span className="w-16 text-center font-bold text-sm select-none cursor-pointer"
                         onClick={() => setTransform(prev => ({ ...prev, scale: 1 }))}
                         title="Reset Zoom"
                     >
                         {Math.round(transform.scale * 100)}%
                     </span>
                     <button
-                        className="p-3 hover:bg-white/10 rounded-full text-white transition-colors"
+                        className="p-3 hover:bg-black/10 rounded-full transition-colors"
                         onClick={() => setTransform(prev => ({ ...prev, scale: Math.min(5, prev.scale + 0.1) }))}
                     >
                         <Plus size={20} />
                     </button>
                 </div>
 
-                {/* divider */}
-                <div className="w-px h-8 bg-white/10"></div>
-
                 {/* Create Note Group */}
-                <div className="glass-panel p-1.5 rounded-full flex gap-3 items-center pointer-events-auto bg-black/50 backdrop-blur-xl border border-white/10 pr-1.5">
+                <div className="glass-panel p-1.5 flex gap-3 items-center pointer-events-auto pr-1.5">
                     {/* Color Picker (Compact) */}
                     <div className="flex gap-1 pl-2">
                         {Object.entries(NOTE_COLORS).map(([key, classes]) => (
                             <button
                                 key={key}
                                 className={clsx(
-                                    "w-5 h-5 rounded-full transition-transform hover:scale-125 box-content border border-transparent",
+                                    "w-6 h-6 rounded-full transition-transform hover:scale-125 box-content border border-transparent/10",
                                     classes.split(' ')[0],
-                                    activeColor === key ? "scale-125 border-white ring-2 ring-white/20 shadow-lg" : "opacity-70 hover:opacity-100"
+                                    activeColor === key ? "scale-125 ring-2 ring-current shadow-md" : "opacity-70 hover:opacity-100"
                                 )}
                                 onClick={() => setActiveColor(key)}
                                 title={key}
@@ -657,10 +663,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         ))}
                     </div>
 
-                    <div className="w-px h-6 bg-white/10 mx-1"></div>
+                    <div className="w-px h-8 bg-current/10 mx-1"></div>
 
                     <button
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-full p-3 shadow-lg transition-transform hover:scale-110 active:scale-95 border border-white/20"
+                        className="glass-button p-3 shadow-md transition-transform hover:scale-110 active:scale-95"
                         onClick={() => handleCreateNote(window.innerWidth / 2, window.innerHeight / 2)}
                         title="Add Sticky Note"
                     >
@@ -671,7 +677,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 {/* Share Button (New Position) */}
                 {onShare && (
                     <button
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-full p-4 shadow-lg pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-white/20"
+                        className="bg-white hover:bg-gray-50 text-teal-600 rounded-full p-4 shadow-xl pointer-events-auto transition-transform hover:scale-110 active:scale-95 border border-gray-100"
                         onClick={onShare}
                         title="Share Board"
                     >

@@ -128,7 +128,26 @@ create policy "Create note if member." on public.notes for insert with check (
     )
   );
 
-create policy "Update own notes." on public.notes for update using (author_id = auth.uid());
+create policy "Update notes if board is accessible." on public.notes for update using (
+    author_id = auth.uid()
+    OR
+    exists (
+      select 1 from public.boards
+      where id = board_id and is_public = true
+    )
+    OR
+    exists (
+      select 1 from public.board_members
+      where board_id = notes.board_id 
+      and user_id = auth.uid() 
+      and role in ('owner', 'editor')
+    )
+    OR
+    exists (
+      select 1 from public.boards
+      where id = board_id and owner_id = auth.uid()
+    )
+  );
 create policy "Delete own notes." on public.notes for delete using (author_id = auth.uid());
 
 -- 5. Realtime
