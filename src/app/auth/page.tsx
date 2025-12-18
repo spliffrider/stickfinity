@@ -11,6 +11,7 @@ const SpaceBackground = dynamic(() => import("@/components/SpaceBackground"), { 
 const BackgroundMusic = dynamic(() => import("@/components/BackgroundMusic"), { ssr: false });
 
 export default function AuthPage() {
+    // Auth Page with Music Integration
     // ... existing code ...
 
     return (
