@@ -8,8 +8,7 @@ export const metadata: Metadata = {
 import dynamic from "next/dynamic";
 const BackgroundMusic = dynamic(() => import("@/components/BackgroundMusic"), { ssr: false });
 
-import { ThemeProvider } from "@/components/ThemeProvider";
-import "./globals.css"; // Ensure globals are imported
+import "./globals.css";
 
 export default function RootLayout({
     children,
@@ -29,20 +28,46 @@ export default function RootLayout({
                                         'space-black': '#050510',
                                         'space-blue': '#101030',
                                         'star-white': '#ffffff',
-                                        'brand-teal': '#14b8a6',
-                                        'brand-mint': '#2dd4bf',
                                     }
                                 }
                             }
                         }
                     `
                 }} />
+                <style dangerouslySetInnerHTML={{
+                    __html: `
+                        body {
+                            color: white;
+                            background: black;
+                            min-height: 100vh;
+                        }
+                        
+                        /* Layout System - Restored Space Glass */
+                        .glass-panel {
+                            background-color: rgba(255, 255, 255, 0.05);
+                            backdrop-filter: blur(24px);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                            border-radius: 0.75rem; 
+                        }
+
+                        .glass-button {
+                            background: rgba(255, 255, 255, 0.05);
+                            color: white;
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            padding: 0.75rem 1.5rem;
+                            border-radius: 0.75rem;
+                            transition: all 0.3s;
+                        }
+                        .glass-button:hover {
+                            background: rgba(255, 255, 255, 0.1);
+                        }
+                    `
+                }} />
             </head>
             <body>
-                <ThemeProvider>
-                    <BackgroundMusic />
-                    {children}
-                </ThemeProvider>
+                <BackgroundMusic />
+                {children}
             </body>
         </html>
     );
