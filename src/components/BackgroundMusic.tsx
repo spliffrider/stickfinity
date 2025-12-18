@@ -38,13 +38,21 @@ export default function BackgroundMusic() {
 
     return (
         <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2">
+            {/* Credit Link */}
+            <a
+                href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-gray-400 hover:text-white transition-colors bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 hover:border-white/20 shadow-lg"
+            >
+                🎵 John B - Up All Night (Epic Mix)
+            </a>
+
             {/* Player Control */}
             <div className={clsx(
                 "glass-panel p-3 rounded-full flex items-center gap-3 transition-all duration-300 border border-white/10 shadow-2xl bg-black/40 backdrop-blur-xl",
                 isPlaying ? "pr-4" : "pr-3"
             )}>
-                {/* Credit Link removed temporarily for debugging */}
-
                 {/* Visualizer (Fake) */}
                 {isPlaying && (
                     <div className="flex items-end gap-[2px] h-4 w-8 mx-1">
