@@ -1,0 +1,87 @@
+
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import { Volume2, VolumeX, Play, Pause, Music } from "lucide-react";
+import clsx from "clsx";
+
+export default function BackgroundMusic() {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [hasInteracted, setHasInteracted] = useState(false);
+
+    useEffect(() => {
+        // Attempt auto-play if possible, but usually requires interaction
+        if (audioRef.current) {
+            audioRef.current.volume = 0.3; // Start subtle
+        }
+    }, []);
+
+    const togglePlay = () => {
+        if (!audioRef.current) return;
+
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play().catch(e => console.log("Audio play failed (interaction needed):", e));
+        }
+        setIsPlaying(!isPlaying);
+        setHasInteracted(true);
+    };
+
+    const toggleMute = () => {
+        if (!audioRef.current) return;
+        audioRef.current.muted = !isMuted;
+        setIsMuted(!isMuted);
+    };
+
+    return (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+
+            {/* Player Control */}
+            <div className={clsx(
+                "glass-panel p-3 rounded-full flex items-center gap-3 transition-all duration-300 border border-white/10 shadow-2xl bg-black/40 backdrop-blur-xl",
+                isPlaying ? "pr-4" : "pr-3"
+            )}>
+                {/* Visualizer (Fake) */}
+                {isPlaying && (
+                    <div className="flex items-end gap-[2px] h-4 w-8 mx-1">
+                        <div className="w-1 bg-cyan-400/80 rounded-t-sm animate-music-bar-1 h-3"></div>
+                        <div className="w-1 bg-purple-400/80 rounded-t-sm animate-music-bar-2 h-full"></div>
+                        <div className="w-1 bg-pink-400/80 rounded-t-sm animate-music-bar-3 h-2"></div>
+                        <div className="w-1 bg-indigo-400/80 rounded-t-sm animate-music-bar-4 h-3"></div>
+                    </div>
+                )}
+
+                <audio
+                    ref={audioRef}
+                    src="/music/John B- Up All Night.mp3"
+                    loop
+                    onEnded={() => setIsPlaying(false)}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                />
+
+                <button
+                    onClick={togglePlay}
+                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all ring-1 ring-white/20 hover:ring-white/50"
+                    title={isPlaying ? "Pause Music" : "Play Music"}
+                >
+                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                </button>
+
+                {/* Volume Toggle (Only show if playing or interacted) */}
+                {(isPlaying || hasInteracted) && (
+                    <button
+                        onClick={toggleMute}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                        title={isMuted ? "Unmute" : "Mute"}
+                    >
+                        {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
