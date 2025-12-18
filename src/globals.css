@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* Default to Space Theme (or Teal, user preference) */
+    --bg-gradient: linear-gradient(to bottom, #000000, #101030);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+
+    /* Panels */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: 24px;
+    --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+    /* Controls */
+    --control-bg: rgba(255, 255, 255, 0.05);
+    --control-border: rgba(255, 255, 255, 0.1);
+    --control-text: #ffffff;
+    --control-hover: rgba(255, 255, 255, 0.1);
+
+    /* Shapes */
+    --radius-panel: 0.75rem;
+    --radius-button: 0.75rem;
+    --radius-note: 0.75rem;
+
+    /* Accents */
+    --accent-primary: #a855f7;
+    /* Purple */
+    --accent-secondary: #6366f1;
+    /* Indigo */
+    --accent-gradient: linear-gradient(to right, rgba(147, 51, 234, 0.8), rgba(79, 70, 229, 0.8));
+}
+
+[data-theme='teal'] {
+    --bg-gradient: linear-gradient(to bottom, #14b8a6, #2dd4bf);
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+
+    /* Panels */
+    --glass-bg: #ffffff;
+    --glass-border: #f1f5f9;
+    --glass-blur: 0px;
+    /* Solid cards */
+    --glass-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+
+    /* Controls */
+    --control-bg: #ffffff;
+    --control-border: #e2e8f0;
+    --control-text: #0f172a;
+    --control-hover: #f1f5f9;
+
+    /* Shapes */
+    --radius-panel: 1.5rem;
+    --radius-button: 9999px;
+    --radius-note: 1rem;
+
+    /* Accents */
+    --accent-primary: #14b8a6;
+    /* Teal */
+    --accent-secondary: #2dd4bf;
+    /* Mint */
+    --accent-gradient: linear-gradient(to right, #14b8a6, #2dd4bf);
+}
+
+body {
+    color: var(--text-primary);
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    transition: background 0.5s ease, color 0.5s ease;
+}
+
+/* Reusable Classes using Vars */
+.glass-panel {
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-panel);
+    transition: all 0.3s ease;
+}
+
+.glass-button {
+    background: var(--accent-gradient);
+    color: white;
+    border-radius: var(--radius-button);
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.glass-button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
