@@ -18,7 +18,7 @@ type Note = Database["public"]["Tables"]["notes"]["Row"];
 interface InfiniteCanvasProps {
     initialNotes: Note[];
     boardId: string;
-    userId: string;
+    userId: string | null;
     onShare?: () => void;
 }
 
@@ -37,6 +37,10 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     const [dragInfo, setDragInfo] = useState<{ noteId: string; startX: number; startY: number; initialNoteX: number; initialNoteY: number } | null>(null);
     const [cursors, setCursors] = useState<Record<string, CursorData>>({});
     const [viewport, setViewport] = useState({ x: 0, y: 0, scale: 1, width: 1000, height: 1000 });
+
+    // Guest Handling
+    const [guestId] = useState(() => `guest-${Math.random().toString(36).substring(7)}`);
+    const effectiveUserId = userId || guestId;
 
     // Color State
     const [activeColor, setActiveColor] = useState<string>('yellow');
@@ -124,7 +128,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                     // Allow multiple devices per user, or just take last. 
                     // Supabase presence is array of objects.
                     userCursors.forEach(cursor => {
-                        if (cursor.userId && cursor.userId !== userId) {
+                        if (cursor.userId && cursor.userId !== effectiveUserId) {
                             newCursors[cursor.userId] = cursor;
                         }
                     });
@@ -134,7 +138,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     await channel.track({
-                        userId,
+                        userId: effectiveUserId,
                         x: 0,
                         y: 0,
                         color: myColor.current,
@@ -148,7 +152,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [boardId, userId]);
+    }, [boardId, userId, effectiveUserId]);
 
     // Global Paste Listener for Images
     useEffect(() => {
@@ -334,7 +338,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             const canvasY = (e.clientY - transform.y) / transform.scale;
             if (channelRef.current) {
                 channelRef.current.track({
-                    userId,
+                    userId: effectiveUserId,
                     x: canvasX,
                     y: canvasY,
                     color: myColor.current

@@ -28,27 +28,32 @@ export default function BoardPage() {
     useEffect(() => {
         const fetchBoardData = async () => {
             const { data } = await supabase.auth.getUser();
-            if (!data.user) {
-                router.push("/auth");
-                return;
-            }
-            setUser(data.user);
+            const currentUser = data.user;
+            setUser(currentUser); // Set user even if null
 
-            // Fetch Board details to verify access
+            // Fetch Board details to verify access (successful if public or owner/member)
             const { data: boardData, error: boardError } = await supabase
                 .from("boards")
                 .select("*")
                 .eq("id", boardId)
                 .single();
 
+            // If board not found or access denied
             if (boardError || !boardData) {
-                console.error("Board not found or access denied");
+                console.error("Board access denied or not found");
+                // Only redirect to auth if we are NOT logged in.
+                // If we are logged in and still can't see it, it's a 404/Permission denied.
+                if (!currentUser) {
+                    router.push("/auth");
+                }
                 return;
             }
+
+            // Access granted
             setBoard(boardData);
 
             // Fetch Notes
-            const { data: notesData, error: notesError } = await supabase
+            const { data: notesData } = await supabase
                 .from("notes")
                 .select("*")
                 .eq("board_id", boardId);
@@ -77,7 +82,7 @@ export default function BoardPage() {
     return (
         <div className="w-full h-screen overflow-hidden">
             <SpaceBackground />
-            <InfiniteCanvas initialNotes={notes} boardId={boardId} userId={user.id} />
+            <InfiniteCanvas initialNotes={notes} boardId={boardId} userId={user?.id || null} />
 
             {/* Header Bar */}
             <div className="fixed top-0 left-0 w-full p-4 z-50 pointer-events-none flex justify-between items-start">
