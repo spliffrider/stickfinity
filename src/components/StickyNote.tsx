@@ -59,12 +59,13 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             const currentText = content.text || "";
-            const originalText = (note.content as { text?: string })?.text || "";
+            const originalContent = safeParseContent(note.content);
+            const originalText = originalContent?.text || "";
 
             if (currentText !== originalText) {
                 onUpdate(note.id, {
                     content: {
-                        ...((note.content as object) || {}),
+                        ...(originalContent || {}),
                         text: currentText
                     }
                 });
