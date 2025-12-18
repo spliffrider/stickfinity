@@ -12,6 +12,7 @@ export default function BackgroundMusic() {
     const [hasInteracted, setHasInteracted] = useState(false);
 
     useEffect(() => {
+        console.log("BackgroundMusic Component MOUNTED!");
         // Attempt auto-play if possible, but usually requires interaction
         if (audioRef.current) {
             audioRef.current.volume = 0.3; // Start subtle
@@ -19,25 +20,27 @@ export default function BackgroundMusic() {
     }, []);
 
     const togglePlay = () => {
+        console.log("Toggle Play Clicked");
         if (!audioRef.current) return;
 
         if (isPlaying) {
             audioRef.current.pause();
         } else {
-            audioRef.current.play().catch(e => console.log("Audio play failed (interaction needed):", e));
+            audioRef.current.play().catch(e => console.error("Audio play failed:", e));
         }
         setIsPlaying(!isPlaying);
         setHasInteracted(true);
     };
 
     const toggleMute = () => {
+        console.log("Toggle Mute Clicked");
         if (!audioRef.current) return;
         audioRef.current.muted = !isMuted;
         setIsMuted(!isMuted);
     };
 
     return (
-        <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-2">
+        <div className="fixed bottom-8 right-8 z-[9999] flex flex-col items-end gap-2 outline outline-4 outline-red-500 bg-red-500/20 p-2 pointer-events-auto">
             {/* Credit Link */}
             <a
                 href="https://john-b.bandcamp.com/track/up-all-night-epic-mix-2020-remaster"
