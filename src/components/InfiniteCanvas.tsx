@@ -484,8 +484,16 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     };
 
     const handleDeleteNote = async (id: string) => {
+        // Optimistic UI update - remove immediately from local state
+        setNotes(prev => prev.filter(n => n.id !== id));
+        // Also remove any connections involving this note
+        setConnections(prev => prev.filter(c => c.from_note_id !== id && c.to_note_id !== id));
+
         const { error } = await (supabase.from('notes') as any).delete().eq('id', id);
-        if (error) console.error('Error deleting note:', error);
+        if (error) {
+            console.error('Error deleting note:', error);
+            alert('Failed to delete note: ' + error.message);
+        }
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
