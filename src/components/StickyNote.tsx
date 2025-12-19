@@ -151,16 +151,18 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                 </div>
 
                 <button
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         if (confirm("Delete this note?")) {
                             onDelete(note.id);
                         }
                     }}
-                    className="p-1.5 rounded-full transition-colors shadow-sm ring-1 bg-black/20 text-white/70 hover:bg-red-500/80 hover:text-white"
+                    className="p-2 rounded-full transition-all bg-red-500 text-white hover:bg-red-600 hover:scale-110 shadow-lg"
                     title="Delete Note"
                 >
-                    <X size={14} />
+                    <X size={16} />
                 </button>
             </div>
 
