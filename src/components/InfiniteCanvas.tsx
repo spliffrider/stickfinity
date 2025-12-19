@@ -465,15 +465,9 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) {
-            console.log('No file selected');
-            return;
-        }
-
-        console.log('File selected:', file.name, file.size, file.type);
+        if (!file) return;
 
         const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop() || 'png'}`;
-        console.log('Uploading to:', filename);
 
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('board-assets')
@@ -505,14 +499,12 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             console.error('Error creating image note:', insertError);
             alert('Failed to create image note: ' + insertError.message);
         } else if (insertedNote) {
-            // Optimistic update in case realtime doesn't fire
             setNotes(prev => {
                 if (prev.find(n => n.id === insertedNote.id)) return prev;
                 return [...prev, insertedNote as Note];
             });
         }
 
-        // Reset file input so the same file can be selected again
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
