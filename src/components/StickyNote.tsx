@@ -156,7 +156,9 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
+                        console.log('Delete button clicked for note:', note.id);
                         if (confirm("Delete this note?")) {
+                            console.log('User confirmed delete, calling onDelete...');
                             onDelete(note.id);
                         }
                     }}
