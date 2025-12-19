@@ -485,16 +485,25 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         const centerX = (window.innerWidth / 2 - transform.x) / transform.scale;
         const centerY = (window.innerHeight / 2 - transform.y) / transform.scale;
 
-        const { error: insertError } = await (supabase.from('notes') as any).insert({
+        const { data: insertedNote, error: insertError } = await (supabase.from('notes') as any).insert({
             board_id: boardId,
             author_id: userId,
             content: { type: 'image', url: publicUrl },
             x: centerX - 100,
             y: centerY - 100,
             color: 'white'
-        });
+        }).select().single();
 
-        if (insertError) console.error('Error creating image note:', insertError);
+        if (insertError) {
+            console.error('Error creating image note:', insertError);
+            alert('Failed to create image note: ' + insertError.message);
+        } else if (insertedNote) {
+            // Optimistic update in case realtime doesn't fire
+            setNotes(prev => {
+                if (prev.find(n => n.id === insertedNote.id)) return prev;
+                return [...prev, insertedNote as Note];
+            });
+        }
 
         // Reset file input so the same file can be selected again
         if (fileInputRef.current) fileInputRef.current.value = '';
