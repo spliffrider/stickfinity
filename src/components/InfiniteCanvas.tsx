@@ -465,9 +465,16 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file) {
+            console.log('No file selected');
+            return;
+        }
+
+        console.log('File selected:', file.name, file.size, file.type);
 
         const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop() || 'png'}`;
+        console.log('Uploading to:', filename);
+
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from('board-assets')
             .upload(filename, file);
