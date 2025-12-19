@@ -13,6 +13,7 @@ interface StickyNoteProps {
     onDelete: (id: string) => void;
     scale: number;
     isConnecting?: boolean;
+    isSelected?: boolean;
 }
 
 // RESTORED SPACE PALETTE
@@ -26,7 +27,7 @@ export const NOTE_COLORS = {
     white: "bg-white/10 border-white/20 shadow-white/10 text-white backdrop-blur-xl",
 } as const;
 
-export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecting }: StickyNoteProps) {
+export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecting, isSelected }: StickyNoteProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showColorPicker, setShowColorPicker] = useState(false);
@@ -93,6 +94,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
                 isConnecting ? "cursor-crosshair ring-2 ring-emerald-400" : "cursor-grab active:cursor-grabbing",
                 colorClass,
                 isEditing && "ring-2 ring-emerald-400 cursor-text z-40 shadow-lg scale-105",
+                isSelected && !isEditing && "ring-2 ring-red-400 shadow-[0_0_20px_rgba(248,113,113,0.5)]",
                 isDragging ? "scale-105 z-50 shadow-xl rotate-1" : "hover:scale-[1.02] hover:z-30",
             )}
             style={{
@@ -110,8 +112,8 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
             onMouseDown={() => setIsDragging(true)}
             onMouseUp={() => setIsDragging(false)}
         >
-            {/* Top Bar for Controls (Visible on Hover) */}
-            <div className="flex justify-between items-center mb-3 opacity-0 hover:opacity-100 transition-opacity absolute top-2 right-2 left-2 z-20">
+            {/* Top Bar for Controls (Always visible) */}
+            <div className="flex justify-between items-center mb-3 absolute top-2 right-2 left-2 z-20">
                 {/* Color Picker Toggle */}
                 <div className="relative">
                     <button
