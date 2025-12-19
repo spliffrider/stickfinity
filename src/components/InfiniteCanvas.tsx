@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Database } from "@/lib/database.types";
 import { supabase } from "@/lib/supabase";
 import StickyNote, { NOTE_COLORS } from "./StickyNote";
-import { Plus, Minus, Link as LinkIcon, MousePointer2, Share2, X } from "lucide-react";
+import { Plus, Minus, Link as LinkIcon, MousePointer2, Share2, X, ImagePlus } from "lucide-react";
 import { Cursor } from "./Cursor";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Minimap } from "./Minimap";
@@ -58,6 +58,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     const channelRef = useRef<RealtimeChannel | null>(null);
     const lastCursorUpdate = useRef(0);
     const myColor = useRef('#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'));
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const handleResize = () => {
@@ -462,6 +463,43 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         if (error) console.error('Error deleting note:', error);
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop() || 'png'}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('board-assets')
+            .upload(filename, file);
+
+        if (uploadError) {
+            console.error('Error uploading image:', uploadError);
+            alert('Failed to upload image: ' + uploadError.message);
+            return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('board-assets')
+            .getPublicUrl(filename);
+
+        const centerX = (window.innerWidth / 2 - transform.x) / transform.scale;
+        const centerY = (window.innerHeight / 2 - transform.y) / transform.scale;
+
+        const { error: insertError } = await (supabase.from('notes') as any).insert({
+            board_id: boardId,
+            author_id: userId,
+            content: { type: 'image', url: publicUrl },
+            x: centerX - 100,
+            y: centerY - 100,
+            color: 'white'
+        });
+
+        if (insertError) console.error('Error creating image note:', insertError);
+
+        // Reset file input so the same file can be selected again
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     return (
         <div
             className={`relative w-full h-full overflow-hidden bg-transparent ${isConnectionMode ? 'cursor-crosshair' : 'cursor-move'}`}
@@ -644,6 +682,21 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                     >
                         <Plus size={20} />
                     </button>
+
+                    <button
+                        className="glass-button p-3 shadow-md transition-transform hover:scale-110 active:scale-95"
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Upload Image"
+                    >
+                        <ImagePlus size={20} />
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept="image/*"
+                        className="hidden"
+                    />
                 </div>
 
                 {/* Share Button (New Position) */}
