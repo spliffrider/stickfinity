@@ -152,6 +152,7 @@ export default function StickyNote({ note, onUpdate, onDelete, scale, isConnecti
 
                 <button
                     onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
