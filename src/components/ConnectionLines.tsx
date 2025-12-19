@@ -21,9 +21,26 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
     };
 
     return (
-        // Use 1x1 pixel with overflow visible to avoid "w-full" resolving to 0 in a collapsed container
         <svg className="absolute top-0 left-0 w-1 h-1 pointer-events-none overflow-visible z-0">
             <defs>
+                {/* 1. Neon Glow Filter */}
+                <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+
+                {/* 2. Animated Energy Gradient */}
+                <linearGradient id="energy-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100%" y2="0">
+                    <stop offset="0%" stopColor="#0891b2" stopOpacity="0.3" />
+                    <stop offset="50%" stopColor="#22d3ee" stopOpacity="1" />
+                    <stop offset="100%" stopColor="#0891b2" stopOpacity="0.3" />
+                    {/* Animation handled via CSS or Framer if needed, but static gradient is better for perf on many lines. 
+                        We will use strokeDasharray animation for flow. */}
+                </linearGradient>
+
                 <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
                     <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
                 </marker>
@@ -35,26 +52,52 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
                 const end = getNoteCenter(conn.to_note_id);
                 if (!start || !end) return null;
 
-                // Check if connection is "new" (created < 5 seconds ago) for animation
-                // Safely handle potential missing dates if optimistic
                 const createdAt = conn.created_at ? new Date(conn.created_at).getTime() : Date.now();
                 const isNew = Date.now() - createdAt < 5000;
 
                 return (
                     <g key={conn.id}>
-                        {/* The Line */}
+                        {/* Outer Glow Line */}
+                        <motion.line
+                            x1={start.x}
+                            y1={start.y}
+                            x2={end.x}
+                            y2={end.y}
+                            stroke="#22d3ee"
+                            strokeWidth="4"
+                            strokeOpacity="0.2"
+                            filter="url(#neon-glow)"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                        />
+
+                        {/* Inner Core Line (Animated Dash) */}
                         <line
                             x1={start.x}
                             y1={start.y}
                             x2={end.x}
                             y2={end.y}
-                            stroke="#0891b2" // Cyan-600
+                            stroke="#cyan" // Fallback
                             strokeWidth="2"
-                            strokeDasharray="5,5"
-                            className="opacity-60"
+                            className="stroke-cyan-400 animate-pulse-fast" // Tailwind animate-pulse or custom class
+                            style={{
+                                strokeDasharray: "10,10",
+                                animation: "dashFlow 1s linear infinite"
+                            }}
                         />
 
-                        {/* The Spaceship Animation */}
+                        {/* Add style tag for keyframes if not present global */}
+                        <style>
+                            {`
+                                @keyframes dashFlow {
+                                    from { stroke-dashoffset: 20; }
+                                    to { stroke-dashoffset: 0; }
+                                }
+                            `}
+                        </style>
+
+                        {/* Spaceship Animation */}
                         <Spaceship start={start} end={end} isNew={isNew} />
                     </g>
                 );
@@ -62,38 +105,29 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
 
             {/* Active Connection (Dragging) */}
             {activeConnection && (
-                <line
-                    x1={activeConnection.startX}
-                    y1={activeConnection.startY}
-                    x2={activeConnection.currentX}
-                    y2={activeConnection.currentY}
-                    stroke="#22d3ee" // Cyan-400
-                    strokeWidth="2"
-                    strokeDasharray="5,5"
-                    markerEnd="url(#arrowhead)"
-                    style={{ pointerEvents: 'none' }}
-                />
+                <g>
+                    <line
+                        x1={activeConnection.startX}
+                        y1={activeConnection.startY}
+                        x2={activeConnection.currentX}
+                        y2={activeConnection.currentY}
+                        stroke="#22d3ee"
+                        strokeWidth="2"
+                        strokeDasharray="5,5"
+                        filter="url(#neon-glow)"
+                    />
+                    <circle cx={activeConnection.currentX} cy={activeConnection.currentY} r="4" fill="#22d3ee" filter="url(#neon-glow)" />
+                </g>
             )}
         </svg>
     );
 };
 
 const Spaceship = ({ start, end, isNew }: { start: { x: number; y: number }, end: { x: number; y: number }, isNew: boolean }) => {
-    // Calculate rotation angle
-    // SVG rotation is usually 0 = right. 
-    // Lucide Rocket is pointing Top-Right (45deg). 
-    // We need to adjust.
     const angle = Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI);
 
     return (
-        <foreignObject
-            width="1"
-            height="1"
-            x={0}
-            y={0}
-            style={{ overflow: 'visible' }}
-        >
-            {/* One-Shot Launch Animation */}
+        <foreignObject width="1" height="1" x={0} y={0} style={{ overflow: 'visible' }}>
             {isNew && (
                 <motion.div
                     initial={{ x: start.x, y: start.y, opacity: 1, scale: 0.5 }}
@@ -105,9 +139,6 @@ const Spaceship = ({ start, end, isNew }: { start: { x: number; y: number }, end
                         left: 0,
                         width: '30px',
                         height: '30px',
-                        // Rocket icon is 45deg by default. 
-                        // So if we rotate by 'angle', we need to subtract 45? Or add 45?
-                        // Let's assume we want to point the Tip.
                         transform: `rotate(${angle + 45}deg) translate(-50%, -50%)`,
                         transformOrigin: '0 0'
                     }}
