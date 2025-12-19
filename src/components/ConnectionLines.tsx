@@ -25,26 +25,47 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
             <defs>
                 {/* 1. Neon Glow Filter */}
                 <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
                     <feMerge>
                         <feMergeNode in="coloredBlur" />
                         <feMergeNode in="SourceGraphic" />
                     </feMerge>
                 </filter>
 
-                {/* 2. Animated Energy Gradient */}
-                <linearGradient id="energy-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100%" y2="0">
-                    <stop offset="0%" stopColor="#0891b2" stopOpacity="0.3" />
-                    <stop offset="50%" stopColor="#22d3ee" stopOpacity="1" />
-                    <stop offset="100%" stopColor="#0891b2" stopOpacity="0.3" />
-                    {/* Animation handled via CSS or Framer if needed, but static gradient is better for perf on many lines. 
-                        We will use strokeDasharray animation for flow. */}
-                </linearGradient>
+                {/* 2. Star Glow Filter */}
+                <filter id="star-glow" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation="1.5" result="blur" />
+                    <feFlood floodColor="white" result="color" />
+                    <feComposite in="color" in2="blur" operator="in" result="shadow" />
+                    <feMerge>
+                        <feMergeNode in="shadow" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
 
                 <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="28" refY="3.5" orient="auto">
                     <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" />
                 </marker>
             </defs>
+
+            <style>
+                {`
+                    @keyframes flowSlow {
+                        0% { stroke-dashoffset: 100; }
+                        100% { stroke-dashoffset: 0; }
+                    }
+                     @keyframes flowFast {
+                        0% { stroke-dashoffset: 100; }
+                        100% { stroke-dashoffset: 0; }
+                    }
+                    .star-stream-slow {
+                        animation: flowSlow 10s linear infinite;
+                    }
+                    .star-stream-fast {
+                        animation: flowFast 3s linear infinite;
+                    }
+                `}
+            </style>
 
             {/* Existing Connections */}
             {connections.map(conn => {
@@ -57,47 +78,61 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
 
                 return (
                     <g key={conn.id}>
-                        {/* Outer Glow Line */}
-                        <motion.line
-                            x1={start.x}
-                            y1={start.y}
-                            x2={end.x}
-                            y2={end.y}
-                            stroke="#22d3ee"
-                            strokeWidth="4"
-                            strokeOpacity="0.2"
-                            filter="url(#neon-glow)"
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                        />
-
-                        {/* Inner Core Line (Animated Dash) */}
+                        {/* Base Line (Subtle) */}
                         <line
                             x1={start.x}
                             y1={start.y}
                             x2={end.x}
                             y2={end.y}
-                            stroke="#cyan" // Fallback
-                            strokeWidth="2"
-                            className="stroke-cyan-400 animate-pulse-fast" // Tailwind animate-pulse or custom class
-                            style={{
-                                strokeDasharray: "10,10",
-                                animation: "dashFlow 1s linear infinite"
-                            }}
+                            stroke="#0e7490"
+                            strokeWidth="1"
+                            strokeOpacity="0.3"
                         />
 
-                        {/* Add style tag for keyframes if not present global */}
-                        <style>
-                            {`
-                                @keyframes dashFlow {
-                                    from { stroke-dashoffset: 20; }
-                                    to { stroke-dashoffset: 0; }
-                                }
-                            `}
-                        </style>
+                        {/* Layer 1: Slow Moving Tiny Stars (Background dust) */}
+                        <line
+                            x1={start.x}
+                            y1={start.y}
+                            x2={end.x}
+                            y2={end.y}
+                            stroke="#a5f3fc" // Cyan-200
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeDasharray="0.1 15" // Tiny dots
+                            className="star-stream-slow"
+                            style={{ opacity: 0.6 }}
+                        />
 
-                        {/* Spaceship Animation */}
+                        {/* Layer 2: Faster Bright Stars (Main trail) */}
+                        <line
+                            x1={start.x}
+                            y1={start.y}
+                            x2={end.x}
+                            y2={end.y}
+                            stroke="white"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeDasharray="0.1 40" // Sparse bright stars
+                            filter="url(#neon-glow)"
+                            className="star-stream-fast"
+                        />
+
+                        {/* Layer 3: Occasional Streaks (Comets) - Optional, using longer dash */}
+                        <line
+                            x1={start.x}
+                            y1={start.y}
+                            x2={end.x}
+                            y2={end.y}
+                            stroke="#22d3ee" // Cyan
+                            strokeWidth="2"
+                            strokeDasharray="10 120"
+                            strokeLinecap="round"
+                            filter="url(#neon-glow)"
+                            className="star-stream-fast"
+                            style={{ animationDuration: '4s', opacity: 0.8 }}
+                        />
+
+                        {/* Spaceship Animation (Only for new connections) */}
                         <Spaceship start={start} end={end} isNew={isNew} />
                     </g>
                 );
@@ -111,10 +146,21 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({ connections, n
                         y1={activeConnection.startY}
                         x2={activeConnection.currentX}
                         y2={activeConnection.currentY}
-                        stroke="#22d3ee"
+                        stroke="#fff"
                         strokeWidth="2"
-                        strokeDasharray="5,5"
+                        strokeDasharray="0 10"
+                        strokeLinecap="round"
+                        className="star-stream-fast"
                         filter="url(#neon-glow)"
+                    />
+                    <line
+                        x1={activeConnection.startX}
+                        y1={activeConnection.startY}
+                        x2={activeConnection.currentX}
+                        y2={activeConnection.currentY}
+                        stroke="#22d3ee"
+                        strokeWidth="1"
+                        strokeOpacity="0.3"
                     />
                     <circle cx={activeConnection.currentX} cy={activeConnection.currentY} r="4" fill="#22d3ee" filter="url(#neon-glow)" />
                 </g>
