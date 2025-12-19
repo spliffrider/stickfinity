@@ -53,6 +53,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
     const [connections, setConnections] = useState<Database["public"]["Tables"]["connections"]["Row"][]>([]);
     const [activeConnection, setActiveConnection] = useState<{ startX: number; startY: number; currentX: number; currentY: number; startNoteId: string } | null>(null);
     const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+    const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const channelRef = useRef<RealtimeChannel | null>(null);
@@ -209,6 +210,28 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
         return () => window.removeEventListener('paste', handlePaste);
     }, [boardId, userId, transform]);
 
+    // Keyboard Delete Listener
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNoteId) {
+                // Don't delete if user is typing in a textarea
+                if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+
+                if (confirm("Delete this note?")) {
+                    handleDeleteNote(selectedNoteId);
+                    setSelectedNoteId(null);
+                }
+            }
+            // Escape to deselect
+            if (e.key === 'Escape') {
+                setSelectedNoteId(null);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedNoteId]);
+
     // Canvas Interactions
     const handleWheel = (e: React.WheelEvent) => {
         if (e.ctrlKey || e.metaKey) {
@@ -303,6 +326,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
             const noteId = noteElement.getAttribute('data-note-id');
             const note = notes.find(n => n.id === noteId);
             if (note && noteId) {
+                setSelectedNoteId(noteId); // Select the note
                 setDragInfo({
                     noteId,
                     startX: e.clientX,
@@ -312,6 +336,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                 });
             }
         } else {
+            setSelectedNoteId(null); // Clear selection when clicking canvas
             setIsPanning(true);
         }
     };
@@ -553,6 +578,7 @@ export default function InfiniteCanvas({ initialNotes, boardId, userId, onShare 
                         onDelete={handleDeleteNote}
                         scale={transform.scale}
                         isConnecting={isConnectionMode || !!activeConnection}
+                        isSelected={selectedNoteId === note.id}
                     />
                 ))}
             </div>
