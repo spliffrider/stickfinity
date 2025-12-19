@@ -27,6 +27,8 @@ export default function BoardPage() {
     // UI State
     const [isShareOpen, setIsShareOpen] = useState(false);
 
+    const [accessDenied, setAccessDenied] = useState(false);
+
     useEffect(() => {
         const fetchBoardData = async () => {
             const { data } = await supabase.auth.getUser();
@@ -42,12 +44,9 @@ export default function BoardPage() {
 
             // If board not found or access denied
             if (boardError || !boardData) {
-                console.error("Board access denied or not found");
-                // Only redirect to auth if we are NOT logged in.
-                // If we are logged in and still can't see it, it's a 404/Permission denied.
-                if (!currentUser) {
-                    router.push("/auth");
-                }
+                console.error("Board access denied or not found:", boardError);
+                setAccessDenied(true);
+                setLoading(false);
                 return;
             }
 
@@ -77,6 +76,24 @@ export default function BoardPage() {
             <div className="w-full h-screen flex items-center justify-center bg-black text-white">
                 <SpaceBackground />
                 <div className="animate-pulse text-2xl font-light">Entering hyperspace...</div>
+            </div>
+        );
+    }
+
+    if (accessDenied) {
+        return (
+            <div className="w-full h-screen flex flex-col items-center justify-center bg-black text-white">
+                <SpaceBackground />
+                <div className="text-center z-10">
+                    <h1 className="text-4xl font-bold mb-4">🔒 Access Denied</h1>
+                    <p className="text-gray-400 mb-8">This board is private or doesn't exist.</p>
+                    <button
+                        onClick={() => router.push('/auth')}
+                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-full text-white font-semibold transition-colors"
+                    >
+                        Sign In to Continue
+                    </button>
+                </div>
             </div>
         );
     }
